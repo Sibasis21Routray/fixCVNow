@@ -18,7 +18,18 @@ export default function UploadPage() {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0])
+      const selectedFile = e.target.files[0]
+      
+      // Check file size (2MB = 2 * 1024 * 1024 bytes)
+      const maxSize = 2 * 1024 * 1024
+      if (selectedFile.size > maxSize) {
+        setError('File size exceeds 2MB limit. Please upload a smaller file.')
+        setFile(null)
+        e.target.value = ''
+        return
+      }
+      
+      setFile(selectedFile)
       setError(null)
     }
   }

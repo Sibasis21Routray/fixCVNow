@@ -10,6 +10,7 @@ import {
   Lock,
   LockOpen,
   Info,
+  FileText,
 } from "lucide-react";
 import { SecureDownloadIcon, ResumeOptimizeIcon } from "@/components/asset-icons";
 import { COLORS } from "@/lib/colors";
@@ -133,6 +134,7 @@ export default function ResumePreview() {
   // Download loading states (true while generating file after payment)
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [isDownloadingWord, setIsDownloadingWord] = useState(false);
+  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
 
   // Page load
   const [loading, setLoading] = useState(true);
@@ -199,7 +201,11 @@ export default function ResumePreview() {
 
     // Restore shared download unlock state (persisted so page refresh doesn't lose a paid unlock)
     const savedDownloadPaymentId = sessionStorage.getItem(`downloadPaymentId_${sessionId}`);
-    if (savedDownloadPaymentId) { setDownloadPaymentId(savedDownloadPaymentId); setDownloadUnlocked(true); }
+    const isConsumed = sessionStorage.getItem(`downloadConsumed_${sessionId}`) === "true";
+    if (savedDownloadPaymentId) {
+      setDownloadPaymentId(savedDownloadPaymentId);
+      if (!isConsumed) setDownloadUnlocked(true);
+    }
 
     setLoading(false);
   }, [sessionId]);
@@ -233,7 +239,14 @@ export default function ResumePreview() {
       const res = await fetch(`${API_URL}/api/payment/create-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, purpose, templateId }),
+        body: JSON.stringify({
+          sessionId,
+          purpose,
+          templateId,
+          customerName: resumeData?.name,
+          email: resumeData?.email,
+          phone: resumeData?.phone,
+        }),
       });
       if (!res.ok) throw new Error("Order creation failed");
       orderData = await res.json();
@@ -331,11 +344,44 @@ export default function ResumePreview() {
     });
   };
 
+  // ── Download Invoice ──
+  const handleDownloadInvoice = async () => {
+    const pid = downloadPaymentId || optimizePaymentId;
+    if (!pid) return;
+
+    setIsDownloadingInvoice(true);
+    try {
+      const res = await fetch(`${API_URL}/api/download/invoice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          paymentId: pid,
+          resumeData: displayData,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Invoice generation failed");
+      }
+      const blob = await res.blob();
+      triggerBlobDownload(blob, `invoice_${pid.slice(-6)}.pdf`);
+    } catch (e) {
+      toast({
+        title: "Invoice download failed",
+        description: e.message || "Could not generate invoice.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloadingInvoice(false);
+    }
+  };
+
   // ── Reset shared lock (called after either format is downloaded) ──
   const resetDownloadLock = () => {
     setDownloadUnlocked(false);
-    setDownloadPaymentId(null);
-    sessionStorage.removeItem(`downloadPaymentId_${sessionId}`);
+    // Keep downloadPaymentId for invoice access
+    sessionStorage.setItem(`downloadConsumed_${sessionId}`, "true");
   };
 
   // ── Download PDF (after unlock) ──
@@ -579,10 +625,14 @@ export default function ResumePreview() {
               </div>
             )}
 
-            {/* Template */}
+            {/* Template - Added copy protection classes */}
             <div
-              className="bg-white rounded-2xl shadow-xl overflow-hidden border-4"
+              className="bg-white rounded-2xl shadow-xl overflow-hidden border-4 select-none user-select-none"
               style={{ borderColor: COLORS.border }}
+              onCopy={(e) => e.preventDefault()}
+              onCut={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
+              onContextMenu={(e) => e.preventDefault()}
             >
               <div
                 className="h-[800px] overflow-y-auto"
@@ -774,6 +824,29 @@ export default function ResumePreview() {
                         <><Loader2 size={15} className="animate-spin" />Generating Word…</>
                       ) : (
                         <><LockOpen size={15} />Download Word</>
+                      )}
+                    </button>
+                  )}
+
+                  {/* ── Invoice Button (whenever we have a paymentId) ── */}
+                  {(downloadPaymentId || optimizePaymentId) && (
+                    <button
+                    style={
+                       { borderColor: "#16a34a", color: "#16a34a" }
+                      }
+                      className="w-full py-2.5 rounded-xl font-bold text-sm border-2 transition-all hover:bg-green-50 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                      onClick={handleDownloadInvoice}
+                      disabled={isDownloadingInvoice}
+                    >
+                      {isDownloadingInvoice ? (
+                        <>
+                          <Loader2 size={12} className="animate-spin" /> Preparing
+                          Invoice...
+                        </>
+                      ) : (
+                        <>
+                          <FileText size={12} /> Download Invoice
+                        </>
                       )}
                     </button>
                   )}

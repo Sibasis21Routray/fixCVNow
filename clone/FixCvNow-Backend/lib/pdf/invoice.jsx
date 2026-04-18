@@ -46,14 +46,15 @@ export const InvoicePDF = ({ data }) => {
             <Text style={styles.label}>FROM:</Text>
             <Text style={styles.boldText}>RBG Growth Orbit Technologies</Text>
             <Text style={styles.text}>Kolkata, India</Text>
+            <Text style={styles.text}>Pin Code: 700040</Text>
             <Text style={styles.text}>Email: Support@FixCVNow.com</Text>
            
           </View>
 
           <View style={styles.infoCol}>
             <Text style={styles.label}>TO:</Text>
-            <Text style={styles.boldText}>{customerName || 'Customer Name'}</Text>
-            <Text style={styles.text}>{email || 'customer@email.com'}</Text>
+            <Text style={styles.boldText}>{customerName || 'Customer'}</Text>
+            <Text style={styles.text}>{email || ''}</Text>
           </View>
 
           <View style={[styles.infoCol, { alignItems: 'flex-end' }]}>
