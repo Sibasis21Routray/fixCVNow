@@ -38,6 +38,10 @@ const OPTIMIZATION_STEPS = [
   'Preparing your optimized CV...',
 ]
 
+// Minimum duration constants (15 seconds = 15000 ms)
+const MIN_EXTRACTION_DURATION = 15000
+const MIN_OPTIMIZATION_DURATION = 15000
+
 export default function ProcessingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -56,6 +60,11 @@ export default function ProcessingPage() {
   const [error, setError] = useState(null)
   const [isComplete, setIsComplete] = useState(false)
   const abortRef = useRef(null)
+  
+  // Timer refs for minimum duration tracking
+  const startTimeRef = useRef(null)
+  const realExtractionCompleteRef = useRef(false)
+  const realOptimizationCompleteRef = useRef(false)
 
   // ─────────────────────────────────────────────
   // Prevent browser back
@@ -68,13 +77,19 @@ export default function ProcessingPage() {
   }, [])
 
   // ─────────────────────────────────────────────
-  // Fake progress timer for optimization phase
+  // Fake progress timer for optimization phase with minimum duration
   // ─────────────────────────────────────────────
   useEffect(() => {
     if (phase !== 'optimization' || isComplete) return
 
+    // Record start time
+    if (!startTimeRef.current) {
+      startTimeRef.current = Date.now()
+    }
+
     const interval = setInterval(() => {
       setOptProgress((prev) => {
+        // Don't go to 100% until real completion happens
         if (prev >= 95) return 95
         if (prev < 30) return prev + 2
         if (prev < 60) return prev + 1.5
@@ -93,7 +108,7 @@ export default function ProcessingPage() {
   }, [optProgress, phase])
 
   // ─────────────────────────────────────────────
-  // Extraction via SSE ReadableStream
+  // Extraction via SSE ReadableStream with minimum duration
   // ─────────────────────────────────────────────
   const performExtraction = useCallback(async () => {
     setError(null)
@@ -101,6 +116,10 @@ export default function ProcessingPage() {
     setCompletedSections(new Set())
     setExtractionProgress(0)
     setCurrentSectionLabel(EXTRACTION_SECTIONS[0].label)
+    realExtractionCompleteRef.current = false
+    
+    // Record start time
+    startTimeRef.current = Date.now()
 
     const controller = new AbortController()
     abortRef.current = controller
@@ -165,6 +184,9 @@ export default function ProcessingPage() {
           }
 
           if (event.type === 'done') {
+            // Mark real extraction as complete
+            realExtractionCompleteRef.current = true
+            
             leadsStorage.updateLead(sessionId, event.leadData)
             resumeStorage.saveResumeData(sessionId, event.resumeData)
             if (event.fileId) {
@@ -173,13 +195,30 @@ export default function ProcessingPage() {
             sessionStorage.setItem(`extracted_${sessionId}`, 'true')
 
             setCompletedSections(new Set(EXTRACTION_SECTIONS.map((s) => s.key)))
-            setExtractionProgress(100)
-            setCurrentSectionLabel('Done!')
+            // Set to 95% instead of 100% to avoid premature 100% display
+            setExtractionProgress(95)
+            setCurrentSectionLabel('Almost done!')
             setIsComplete(true)
 
-            setTimeout(() => {
-              window.location.replace(`/?id=${sessionId}`)
-            }, 800)
+            // Check if minimum duration has passed
+            const elapsedTime = Date.now() - startTimeRef.current
+            const remainingTime = Math.max(0, MIN_EXTRACTION_DURATION - elapsedTime)
+            
+            if (remainingTime > 0) {
+              // Wait for remaining time, then set to 100% and redirect
+              setTimeout(() => {
+                setExtractionProgress(100)
+                setTimeout(() => {
+                  window.location.replace(`/?id=${sessionId}`)
+                }, 300)
+              }, remainingTime)
+            } else {
+              // Already passed minimum time, set to 100% and redirect
+              setExtractionProgress(100)
+              setTimeout(() => {
+                window.location.replace(`/?id=${sessionId}`)
+              }, 300)
+            }
           }
 
           if (event.type === 'error') {
@@ -221,6 +260,53 @@ export default function ProcessingPage() {
     const timer = setTimeout(performExtraction, 800)
     return () => clearTimeout(timer)
   }, [sessionId, phase, router, performExtraction])
+
+  // ─────────────────────────────────────────────
+  // Fake optimization completion handler
+  // ─────────────────────────────────────────────
+  const completeOptimization = useCallback(() => {
+    if (realOptimizationCompleteRef.current) return
+    realOptimizationCompleteRef.current = true
+    
+    // Set to 95% first
+    setOptProgress(95)
+    setOptStep(OPTIMIZATION_STEPS.length - 1)
+    setIsComplete(true)
+    
+    const elapsedTime = Date.now() - startTimeRef.current
+    const remainingTime = Math.max(0, MIN_OPTIMIZATION_DURATION - elapsedTime)
+    
+    if (remainingTime > 0) {
+      setTimeout(() => {
+        setOptProgress(100)
+        setTimeout(() => {
+          window.location.replace(`/?id=${sessionId}`)
+        }, 300)
+      }, remainingTime)
+    } else {
+      setOptProgress(100)
+      setTimeout(() => {
+        window.location.replace(`/?id=${sessionId}`)
+      }, 300)
+    }
+  }, [sessionId])
+
+  // Simulate optimization completion (replace with actual API call when ready)
+  useEffect(() => {
+    if (phase !== 'optimization') return
+    
+    // Record start time
+    if (!startTimeRef.current) {
+      startTimeRef.current = Date.now()
+    }
+    
+    // Simulate API call - replace this with your actual optimization API call
+    const timer = setTimeout(() => {
+      completeOptimization()
+    }, 2000) // Simulate 2-second real processing - replace with actual API
+    
+    return () => clearTimeout(timer)
+  }, [phase, completeOptimization])
 
   // ─────────────────────────────────────────────
   // Derived display values

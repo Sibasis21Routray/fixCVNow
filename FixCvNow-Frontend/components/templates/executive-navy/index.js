@@ -1,5 +1,5 @@
 // components/templates/executive-navy/index.js
-//senior leadership
+//senior leadership preview
 
 import { groupExperience } from '@/lib/utils/groupExperience'
 import { TEMPLATE } from '@/lib/theme'

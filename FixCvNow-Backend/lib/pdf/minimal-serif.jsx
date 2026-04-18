@@ -1,5 +1,6 @@
 // lib/pdf/minimal-serif.jsx
 // @react-pdf/renderer — Minimal Serif template
+//Modern Corporate PDF
 import React from 'react'
 
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer'
@@ -17,18 +18,13 @@ const styles = StyleSheet.create({
     fontSize: SZ.body,
     backgroundColor: '#ffffff',
     paddingTop: MARGIN,
-  paddingBottom: MARGIN,
+    paddingBottom: MARGIN,
   },
   header: {
     backgroundColor: C.headerBg,
     paddingHorizontal: MARGIN,
     paddingVertical: 18,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  headerLeft: {
-    flex: 1,
+    alignItems: 'center',
   },
   name: {
     fontSize: SZ.name,
@@ -36,25 +32,28 @@ const styles = StyleSheet.create({
     color: C.headerText,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
+    textAlign: 'center',
   },
   titleText: {
     fontSize: SZ.body,
     color: C.headerSub,
     fontFamily: T.font.pdfItalic,
     marginTop: 2,
+    textAlign: 'center',
   },
-  headerRight: {
-    textAlign: 'right',
+  contactContainer: {
+    marginTop: 12,
+    alignItems: 'center',
   },
   contactItem: {
     fontSize: SZ.small,
     color: C.headerSub,
-    textAlign: 'right',
+    textAlign: 'center',
     marginBottom: 2,
   },
   labelBold: {
-  fontFamily: T.font.pdfBold,
-},
+    fontFamily: T.font.pdfBold,
+  },
   summaryBanner: {
     paddingHorizontal: MARGIN,
     paddingVertical: 10,
@@ -260,44 +259,88 @@ export function MinimalSerifPDF({ data }) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        {/* Centered Header - Single Column */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.name}>{data.name}</Text>
-            {(data.headline || data.title) && <Text style={styles.titleText}>{data.headline || data.title}</Text>}
-          </View>
-          <View style={styles.headerRight}>
-            {data.phone && <Text style={styles.contactItem}><Text style={styles.labelBold}>Ph. </Text> {data.phone}{data.alternatePhone ? ` / ${data.alternatePhone}` : ''}</Text>}
-            {data.email && <Text style={styles.contactItem}><Text style={styles.labelBold}>Email </Text> {data.email}</Text>}
-            {address ? <Text style={styles.contactItem}><Text style={styles.labelBold}>Addr. </Text> {address}</Text> : null}
-            {data.nationality && <Text style={styles.contactItem}><Text style={styles.labelBold}>Nationality: </Text> {data.nationality}</Text>}
-            {data.dateOfBirth && <Text style={styles.contactItem}><Text style={styles.labelBold}>DOB: </Text> {data.dateOfBirth}</Text>}
-            {data.gender && <Text style={styles.contactItem}><Text style={styles.labelBold}>Gender: </Text> {data.gender}</Text>}
-            {data.maritalStatus && <Text style={styles.contactItem}><Text style={styles.labelBold}>Marital Status: </Text> {data.maritalStatus}</Text>}
+          <Text style={styles.name}>{data.name || ''}</Text>
+          {(data.headline || data.title) && (
+            <Text style={styles.titleText}>{data.headline || data.title}</Text>
+          )}
+          <View style={styles.contactContainer}>
+            {data.phone && (
+              <Text style={styles.contactItem}>
+                <Text style={styles.labelBold}>Ph. </Text> 
+                {data.phone}{data.alternatePhone ? ` / ${data.alternatePhone}` : ''}
+              </Text>
+            )}
+            {data.email && (
+              <Text style={styles.contactItem}>
+                <Text style={styles.labelBold}>Email </Text> 
+                {data.email}
+              </Text>
+            )}
+            {address && (
+              <Text style={styles.contactItem}>
+                <Text style={styles.labelBold}>Addr. </Text> 
+                {address}
+              </Text>
+            )}
+            {data.nationality && (
+              <Text style={styles.contactItem}>
+                <Text style={styles.labelBold}>Nationality: </Text> 
+                {data.nationality}
+              </Text>
+            )}
+            {data.dateOfBirth && (
+              <Text style={styles.contactItem}>
+                <Text style={styles.labelBold}>DOB: </Text> 
+                {data.dateOfBirth}
+              </Text>
+            )}
+            {data.gender && (
+              <Text style={styles.contactItem}>
+                <Text style={styles.labelBold}>Gender: </Text> 
+                {data.gender}
+              </Text>
+            )}
+            {data.maritalStatus && (
+              <Text style={styles.contactItem}>
+                <Text style={styles.labelBold}>Marital Status: </Text> 
+                {data.maritalStatus}
+              </Text>
+            )}
             {data.socialLinks?.map((link, idx) => (
-              <Text key={idx} style={styles.contactItem}>{link.label}: {link.url}</Text>
+              <Text key={idx} style={styles.contactItem}>
+                {link.label}: {link.url}
+              </Text>
             ))}
           </View>
         </View>
 
+        {/* Centered Summary */}
         {data.summary && (
           <View style={styles.summaryBanner}>
-            <Text style={styles.summaryLabel}>Summary</Text>
+            <Text style={styles.summaryLabel}>SUMMARY</Text>
             <Text style={styles.summaryText}>{data.summary?.replace(/\n/g, ' ')}</Text>
           </View>
         )}
 
+        {/* Two Column Body - Unchanged */}
         <View style={styles.body}>
-          {/* LEFT */}
+          {/* LEFT COLUMN */}
           <View style={styles.leftCol}>
             {data.education?.length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Education</Text>
                 {data.education.map((edu, idx) => (
                   <View key={idx} style={styles.eduBlock}>
-                    <Text style={styles.eduDegree}>{edu.degree}{(edu.fieldOfStudy || edu.field) ? ` — ${edu.fieldOfStudy || edu.field}` : ''}</Text>
+                    <Text style={styles.eduDegree}>
+                      {edu.degree}{(edu.fieldOfStudy || edu.field) ? ` — ${edu.fieldOfStudy || edu.field}` : ''}
+                    </Text>
                     <Text style={styles.eduInstitution}>{edu.institution || edu.school}</Text>
                     <Text style={styles.eduDates}>
-                      {(edu.startYear || edu.start) ? `${edu.startYear || edu.start} – ` : ''}{edu.endYear || edu.end || edu.year}{(edu.grade || edu.percentage || edu.gpa) ? ` | ${edu.grade || edu.percentage || edu.gpa}` : ''}
+                      {(edu.startYear || edu.start) ? `${edu.startYear || edu.start} – ` : ''}
+                      {edu.endYear || edu.end || edu.year}
+                      {(edu.grade || edu.percentage || edu.gpa) ? ` | ${edu.grade || edu.percentage || edu.gpa}` : ''}
                     </Text>
                   </View>
                 ))}
@@ -341,7 +384,7 @@ export function MinimalSerifPDF({ data }) {
             )}
           </View>
 
-          {/* RIGHT */}
+          {/* RIGHT COLUMN */}
           <View style={styles.rightCol}>
             {data.keyHighlights?.length > 0 && (
               <View style={styles.section}>
@@ -366,7 +409,8 @@ export function MinimalSerifPDF({ data }) {
                         <View style={styles.jobRow}>
                           <Text style={styles.jobRole}>{group.positions[0].role}</Text>
                           <Text style={styles.jobDates}>
-                            {group.positions[0].start}{group.positions[0].end ? ` – ${group.positions[0].end}` : ' – Present'}
+                            {group.positions[0].start}
+                            {group.positions[0].end ? ` – ${group.positions[0].end}` : ' – Present'}
                           </Text>
                         </View>
                         {getBullets(group.positions[0]).map((bullet, i) => (
@@ -381,7 +425,8 @@ export function MinimalSerifPDF({ data }) {
                         <View style={styles.companyHeader}>
                           <Text style={styles.jobCompany}>{group.company}</Text>
                           <Text style={styles.companyOverallDates}>
-                            {group.overallStart}{group.overallEnd ? ` – ${group.overallEnd}` : ' – Present'}
+                            {group.overallStart}
+                            {group.overallEnd ? ` – ${group.overallEnd}` : ' – Present'}
                           </Text>
                         </View>
                         <View style={styles.positionsBlock}>
@@ -389,7 +434,10 @@ export function MinimalSerifPDF({ data }) {
                             <View key={pIdx} style={styles.positionEntry}>
                               <View style={styles.positionHeader}>
                                 <Text style={styles.positionRole}>{pos.role}</Text>
-                                <Text style={styles.positionDates}>{pos.start}{pos.end ? ` – ${pos.end}` : ' – Present'}</Text>
+                                <Text style={styles.positionDates}>
+                                  {pos.start}
+                                  {pos.end ? ` – ${pos.end}` : ' – Present'}
+                                </Text>
                               </View>
                               {getBullets(pos).map((bullet, i) => (
                                 <View key={i} style={styles.bullet}>

@@ -1,5 +1,5 @@
 // components/templates/minimal-serif/index.js
-
+//Modern Corporate frontend
 import { groupExperience } from '@/lib/utils/groupExperience'
 import { TEMPLATE } from '@/lib/theme'
 
@@ -32,22 +32,22 @@ export function MinimalSerifTemplate({ data, getBlurClass }) {
 
   return (
     <div className="bg-white h-full text-xs leading-relaxed" style={{ fontFamily: T.font.html }}>
-      {/* Header — black background */}
-      <div className="px-8 py-5 flex justify-between items-start" style={{ backgroundColor: T.color.headerBg }}>
+      {/* Header — black background, centered */}
+      <div className="px-8 py-5 text-center" style={{ backgroundColor: T.color.headerBg }}>
         <div>
-          <h1 className="text-2xl font-bold uppercase" style={{ letterSpacing: '0.1em', color: T.color.headerText }}>
+          <h1 className="text-2xl font-bold uppercase text-center" style={{ letterSpacing: '0.1em', color: T.color.headerText }}>
             {data.name}
           </h1>
-          {(() => { const h = data.headline || data.title; return h && h.trim().replace(/\//g,'').trim() ? <p className="text-sm mt-0.5 italic" style={{ color: T.color.headerSub }}>{h}</p> : null })()}
+          {(() => { const h = data.headline || data.title; return h && h.trim().replace(/\//g,'').trim() ? <p className="text-sm mt-0.5 italic text-center" style={{ color: T.color.headerSub }}>{h}</p> : null })()}
         </div>
-        <div className="text-right text-[10px] space-y-0.5" style={{ color: T.color.headerSub }}>
-          {data.phone && <div className="flex items-center gap-1 justify-end"><span className="font-semibold">Ph.</span><span>{data.phone}{data.alternatePhone ? ` / ${data.alternatePhone}` : ''}</span></div>}
-          {data.email && <div className="flex items-center gap-1 justify-end"><span className="font-semibold">Email</span><span>{data.email}</span></div>}
-          {address && <div className="flex items-center gap-1 justify-end"><span className="font-semibold">Addr.</span><span>{address}</span></div>}
-          {data.nationality && <div className="flex items-center gap-1 justify-end"><span className="font-semibold">Nationality:</span><span>{data.nationality}</span></div>}
-          {data.dateOfBirth && <div className="flex items-center gap-1 justify-end"><span className="font-semibold">DOB:</span><span>{data.dateOfBirth}</span></div>}
+        <div className="mt-3 text-[10px] space-y-0.5" style={{ color: T.color.headerSub }}>
+          {data.phone && <div className="flex items-center gap-1 justify-center"><span className="font-semibold">Ph.</span><span>{data.phone}{data.alternatePhone ? ` / ${data.alternatePhone}` : ''}</span></div>}
+          {data.email && <div className="flex items-center gap-1 justify-center"><span className="font-semibold">Email</span><span>{data.email}</span></div>}
+          {address && <div className="flex items-center gap-1 justify-center"><span className="font-semibold">Addr.</span><span>{address}</span></div>}
+          {data.nationality && <div className="flex items-center gap-1 justify-center"><span className="font-semibold">Nationality:</span><span>{data.nationality}</span></div>}
+          {data.dateOfBirth && <div className="flex items-center gap-1 justify-center"><span className="font-semibold">DOB:</span><span>{data.dateOfBirth}</span></div>}
           {data.socialLinks?.map((link, idx) => (
-            <div key={idx} className="flex items-center gap-1 justify-end">
+            <div key={idx} className="flex items-center gap-1 justify-center">
               <span className="font-semibold">{link.label}:</span><span>{link.url}</span>
             </div>
           ))}
@@ -291,16 +291,15 @@ export function SerifPreview({ data }) {
 
   return (
     <div className="h-full bg-white text-[7px] leading-tight overflow-hidden" style={{ fontFamily: T.font.html }}>
-      <div className="px-3 py-2 flex justify-between items-start" style={{ backgroundColor: T.color.headerBg }}>
-        <div className="flex-1 min-w-0">
-          <div className="font-bold text-[10px] uppercase truncate" style={{ letterSpacing: '0.08em', color: T.color.headerText }}>
-            {data.name}
-          </div>
-          {(() => { const h = data.headline || data.title; return h && h.trim().replace(/\//g,'').trim() ? <div className="text-[7px] italic truncate" style={{ color: T.color.headerSub }}>{h}</div> : null })()}
+      {/* Header — centered for preview */}
+      <div className="px-3 py-2 text-center" style={{ backgroundColor: T.color.headerBg }}>
+        <div className="font-bold text-[10px] uppercase truncate" style={{ letterSpacing: '0.08em', color: T.color.headerText }}>
+          {data.name}
         </div>
-        <div className="text-right text-[6px] space-y-0.5 ml-2 flex-shrink-0" style={{ color: T.color.headerSub }}>
+        {(() => { const h = data.headline || data.title; return h && h.trim().replace(/\//g,'').trim() ? <div className="text-[7px] italic truncate" style={{ color: T.color.headerSub }}>{h}</div> : null })()}
+        <div className="text-[6px] space-y-0.5 mt-1" style={{ color: T.color.headerSub }}>
           {data.phone && <div>{data.phone}{data.alternatePhone ? ` / ${data.alternatePhone}` : ''}</div>}
-          {data.email && <div className="truncate max-w-[90px]">{data.email}</div>}
+          {data.email && <div className="truncate max-w-[90px] mx-auto">{data.email}</div>}
         </div>
       </div>
 

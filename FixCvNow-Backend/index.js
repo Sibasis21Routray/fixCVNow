@@ -105,12 +105,12 @@ app.use(express.json({ limit: '10mb' }))
 // --------------------------------------------------
 // Routes
 // --------------------------------------------------
-app.use('/api/extract',  checkIPBlock, extractRoute)
+app.use('/api/extract', checkIPBlock, extractRoute)
 app.use('/api/optimize', checkIPBlock, optimizeRoute)
 app.use('/api/download', checkIPBlock, downloadRoute)
-app.use('/api/payment',  paymentRoute)
-app.use('/admin',        adminRoute)
-app.use('/api/preview',  previewRoute)
+app.use('/api/payment', paymentRoute)
+app.use('/admin', adminRoute)
+app.use('/api/preview', previewRoute)
 
 // --------------------------------------------------
 // Health Check
@@ -138,5 +138,5 @@ const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`)
   console.log(`🔑 OpenAI Key: ${process.env.OPENAI_API_KEY ? 'Loaded' : 'Missing'}`)
-  console.log(`🗄️  MongoDB:    ${process.env.MONGODB_URI   ? 'Configured' : 'Not set — DB features disabled'}`)
+  console.log(`🗄️  MongoDB:    ${process.env.MONGODB_URI ? 'Configured' : 'Not set — DB features disabled'}`)
 })

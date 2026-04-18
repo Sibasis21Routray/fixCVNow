@@ -60,9 +60,9 @@ router.post('/pdf', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
     res.setHeader('Content-Length', String(buffer.length))
     res.send(buffer)
-    
+
     // Reset IP block count on conversion
-    trackConversion(req.userIP).catch(() => {})
+    trackConversion(req.userIP).catch(() => { })
 
   } catch (err) {
     console.error(`[Download PDF] Error (${((Date.now() - start) / 1000).toFixed(2)}s):`, err.message)
@@ -111,9 +111,9 @@ router.post('/word', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
     res.setHeader('Content-Length', String(buffer.length))
     res.send(buffer)
-    
+
     // Reset IP block count on conversion
-    trackConversion(req.userIP).catch(() => {})
+    trackConversion(req.userIP).catch(() => { })
 
   } catch (err) {
     console.error(`[Download Word] Error (${((Date.now() - start) / 1000).toFixed(2)}s):`, err.message)

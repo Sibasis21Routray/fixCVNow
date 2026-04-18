@@ -1,5 +1,5 @@
 // lib/word/executive-navy.js
-// Word — Executive Navy
+// Word — Senior Leadership
 
 import {
   Document, Paragraph, TextRun, Table, TableRow, TableCell,

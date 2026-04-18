@@ -1,5 +1,6 @@
 // lib/word/minimal-serif.js
 // Word — Minimal Serif
+//Modern Corporate
 
 import {
   Document, Paragraph, TextRun, Table, TableRow, TableCell,
@@ -17,8 +18,6 @@ const INDENT = convertInchesToTwip(0.25)
 // A4 = 11906 twips. 0.75" margins → text area = 9746 twips.
 const MARGIN     = 720
 const TEXT_W     = 11906 - MARGIN * 2
-const HDR_LEFT   = Math.round(TEXT_W * 0.60)
-const HDR_RIGHT  = TEXT_W - HDR_LEFT
 const BODY_LEFT  = Math.round(TEXT_W * 0.35)
 const BODY_RIGHT = TEXT_W - BODY_LEFT
 
@@ -108,81 +107,77 @@ export function buildMinimalSerifDoc(data) {
     { key: 'languages', cost: (data.languages?.length || 0) + 2 },
   ]) { if (imbalance > 8) { moveRight.add(s.key); imbalance -= s.cost } }
 
-  // ── Black header table ──
+  // ── Centered header table (single column) ──
   const headerTable = new Table({
     width: { size: TEXT_W, type: WidthType.DXA },
     layout: TableLayoutType.FIXED,
-    columnWidths: [HDR_LEFT, HDR_RIGHT],
+    columnWidths: [TEXT_W],
     rows: [
       new TableRow({
         children: [
           new TableCell({
-            width: { size: HDR_LEFT, type: WidthType.DXA },
+            width: { size: TEXT_W, type: WidthType.DXA },
             shading: { fill: CW.headerBg, type: ShadingType.CLEAR },
             borders: {
-              top: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE },
+              top: { style: BorderStyle.NONE },
+              left: { style: BorderStyle.NONE },
               right: { style: BorderStyle.NONE },
               bottom: { style: BorderStyle.THICK, size: 12, color: '1F2937' },
             },
             children: [
               new Paragraph({
                 children: [new TextRun({ text: (data.name || '').toUpperCase(), bold: true, size: SZ.name, color: CW.headerText, font: T.font.word })],
+                alignment: AlignmentType.CENTER,
                 spacing: { before: 120, after: 60 },
               }),
               ...(data.title ? [new Paragraph({
                 children: [new TextRun({ text: data.title, italics: true, size: SZ.body, color: CW.headerSub, font: T.font.word })],
-                spacing: { after: 120 },
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 30 },
               })] : []),
-            ],
-          }),
-          new TableCell({
-            width: { size: HDR_RIGHT, type: WidthType.DXA },
-            shading: { fill: CW.headerBg, type: ShadingType.CLEAR },
-            borders: {
-              top: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE },
-              left: { style: BorderStyle.NONE },
-              bottom: { style: BorderStyle.THICK, size: 12, color: '1F2937' },
-            },
-            children: [
+              new Paragraph({
+                children: [],
+                spacing: { after: 30 },
+              }),
               ...(data.phone ? [new Paragraph({
                 children: [new TextRun({ text: `Ph. ${[data.phone, data.alternatePhone].filter(Boolean).join(' / ')}`, size: SZ.small, color: CW.headerSub, font: T.font.word })],
-                alignment: AlignmentType.RIGHT,
-                spacing: { before: 120, after: 30 },
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 20 },
               })] : []),
               ...(data.email ? [new Paragraph({
                 children: [new TextRun({ text: `Email ${data.email}`, size: SZ.small, color: CW.headerSub, font: T.font.word })],
-                alignment: AlignmentType.RIGHT,
-                spacing: { after: 30 },
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 20 },
               })] : []),
               ...(address ? [new Paragraph({
                 children: [new TextRun({ text: `Addr. ${address}`, size: SZ.small, color: CW.headerSub, font: T.font.word })],
-                alignment: AlignmentType.RIGHT,
-                spacing: { after: 30 },
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 20 },
               })] : []),
               ...(data.nationality ? [new Paragraph({
                 children: [new TextRun({ text: `Nationality: ${data.nationality}`, size: SZ.small, color: CW.headerSub, font: T.font.word })],
-                alignment: AlignmentType.RIGHT,
-                spacing: { after: 30 },
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 20 },
               })] : []),
               ...(data.dateOfBirth ? [new Paragraph({
                 children: [new TextRun({ text: `DOB: ${data.dateOfBirth}`, size: SZ.small, color: CW.headerSub, font: T.font.word })],
-                alignment: AlignmentType.RIGHT,
-                spacing: { after: 30 },
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 20 },
               })] : []),
               ...(data.gender ? [new Paragraph({
                 children: [new TextRun({ text: `Gender: ${data.gender}`, size: SZ.small, color: CW.headerSub, font: T.font.word })],
-                alignment: AlignmentType.RIGHT,
-                spacing: { after: 30 },
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 20 },
               })] : []),
               ...(data.maritalStatus ? [new Paragraph({
                 children: [new TextRun({ text: `Marital Status: ${data.maritalStatus}`, size: SZ.small, color: CW.headerSub, font: T.font.word })],
-                alignment: AlignmentType.RIGHT,
-                spacing: { after: 30 },
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 20 },
               })] : []),
               ...(data.socialLinks || []).map((link, idx) => new Paragraph({
                 children: [new TextRun({ text: `${link.label}: ${link.url}`, size: SZ.small, color: CW.headerSub, font: T.font.word })],
-                alignment: AlignmentType.RIGHT,
-                spacing: { after: idx === (data.socialLinks.length - 1) ? 120 : 30 },
+                alignment: AlignmentType.CENTER,
+                spacing: { after: idx === (data.socialLinks.length - 1) ? 120 : 20 },
               })),
             ],
           }),
