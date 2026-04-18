@@ -81,38 +81,38 @@ export default function TemplateSelector() {
   const templates = [
     {
       id: 1,
-      name: 'Corporate Standard',
-      description: ' Clean and structured format trusted by recruiters — ideal for BFSI, insurance, and corporate roles.',
+      name: 'Classic Professional',
+      description: 'Traditional format with section highlights and education table — great for BFSI & corporate roles',
       preview: <ClassicPreview data={resumeData} />,
     },
     {
       id: 2,
-      name: 'Senior Leadership',
-      description: 'Designed for experienced professionals — highlights leadership, achievements, and decision-making roles.',
+      name: 'Executive Navy',
+      description: 'Navy header with two-column layout — ideal for senior professionals in insurance, finance, and sales',
       preview: <NavyPreview data={resumeData} />,
     },
     {
       id: 3,
-      name: 'Modern Corporate',
-      description: 'Sleek and modern design — perfect for professionals in sales, operations, and growth roles.',
+      name: 'Minimal Serif',
+      description: 'Clean serif design with gray header and two-column layout — suits insurance, recruitment, and modern roles',
       preview: <SerifPreview data={resumeData} />,
     },
     {
       id: 4,
-      name: ' Startup & Tech',
-      description: 'Contemporary layout built for startups, tech, and fast-growing companies.',
+      name: 'Modern Minimalist',
+      description: 'Contemporary design with blue header and subtle accents — perfect for tech, startups, and creative roles',
       preview: <ModernPreview data={resumeData} />,
     },
     {
       id: 5,
-      name: 'Impact Resume',
-      description: 'Strong headings and bold structure — makes your experience stand out instantly.',
+      name: 'Classic Bold',
+      description: 'Bold two-column layout with strong typography and blue accents — ideal for experienced professionals and executives',
       preview: <ClassicBoldPreview data={resumeData} />,
     },
     {
       id: 6,
       name: 'Classic Early Career',
-      description: ' Simple and effective format for freshers and early-career professionals.',
+      description: 'Classic layout with Career Objective section — perfect for freshers, students, and early-stage professionals',
       preview: <EarlyCareerPreview data={resumeData} />,
     },
   ]
@@ -135,7 +135,8 @@ export default function TemplateSelector() {
         )}
 
         <p className="text-center mb-12 text-base md:text-lg text-slate-500">
-All templates are ATS-friendly. Choose based on your role, experience level, and the type of impression you want to create.        </p>
+          Select a professional template — your real extracted content is shown live in each card below.
+        </p>
 
         {/* Templates Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
@@ -174,20 +175,17 @@ All templates are ATS-friendly. Choose based on your role, experience level, and
         </div>
 
         {/* Info Box */}
-        {/* Added 'select-none' to prevent text selection */}
-<div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 md:p-8 select-none" 
-     onCopy={(e) => e.preventDefault()}> 
-  <div className="flex gap-4">
-    <CheckCircle size={24} className="text-blue-600 flex-shrink-0 mt-0.5" />
-    <div>
-      <p className="font-bold text-blue-900 mb-2">How this works:</p>
-      <p className="text-blue-800 text-sm">
-        Select a template to see your resume transformed into a clean, professional format. 
-        Download it instantly or take it one step further with AI optimization to make it impactful.
-      </p>
-    </div>
-  </div>
-</div>
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 md:p-8">
+          <div className="flex gap-4">
+            <CheckCircle size={24} className="text-blue-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-blue-900 mb-2">How this works:</p>
+              <p className="text-blue-800 text-sm">
+                After selecting a template, you'll see a full preview of your optimized resume. Content will be blurred with an unlock option. Pay ₹9 to download with watermark or ₹20 to download the full version without watermark.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

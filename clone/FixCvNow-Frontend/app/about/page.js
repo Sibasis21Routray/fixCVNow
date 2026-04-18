@@ -14,6 +14,7 @@ const whatMakesDifferent = [
   'See real improvements before you pay',
   'No signup required for instant upgrades',
   'Get a structured, professional CV in under 2 minutes',
+  'Affordable for everyone (starting at just ₹19)',
   'Built for real hiring scenarios—not just templates',
 ]
 

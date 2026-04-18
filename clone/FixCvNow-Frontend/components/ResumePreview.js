@@ -1,4 +1,3 @@
-// this is components/ResumePreview.js
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -10,6 +9,7 @@ import {
   Lock,
   LockOpen,
   Info,
+  Download,
 } from "lucide-react";
 import { SecureDownloadIcon, ResumeOptimizeIcon } from "@/components/asset-icons";
 import { COLORS } from "@/lib/colors";
@@ -129,11 +129,13 @@ export default function ResumePreview() {
   // Shared download unlock — ₹9 unlocks both PDF and Word; resets after one download
   const [downloadUnlocked, setDownloadUnlocked] = useState(false);
   const [downloadPaymentId, setDownloadPaymentId] = useState(null);
+  const [lastPaymentId, setLastPaymentId] = useState(null);
 
-  // Download loading states (true while generating file after payment)
+
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [isDownloadingWord, setIsDownloadingWord] = useState(false);
-
+  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
+  const [invoiceDownloaded, setInvoiceDownloaded] = useState(false);
   // Page load
   const [loading, setLoading] = useState(true);
   const [errorType, setErrorType] = useState(null);
@@ -199,7 +201,13 @@ export default function ResumePreview() {
 
     // Restore shared download unlock state (persisted so page refresh doesn't lose a paid unlock)
     const savedDownloadPaymentId = sessionStorage.getItem(`downloadPaymentId_${sessionId}`);
-    if (savedDownloadPaymentId) { setDownloadPaymentId(savedDownloadPaymentId); setDownloadUnlocked(true); }
+    if (savedDownloadPaymentId) {
+      setDownloadPaymentId(savedDownloadPaymentId);
+      setLastPaymentId(savedDownloadPaymentId);
+      setDownloadUnlocked(true);
+    }
+    const savedLastPaymentId = sessionStorage.getItem(`lastPaymentId_${sessionId}`);
+    if (savedLastPaymentId) setLastPaymentId(savedLastPaymentId);
 
     setLoading(false);
   }, [sessionId]);
@@ -233,7 +241,14 @@ export default function ResumePreview() {
       const res = await fetch(`${API_URL}/api/payment/create-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, purpose, templateId }),
+        body: JSON.stringify({
+          sessionId,
+          purpose,
+          templateId,
+          customerName: resumeData?.name,
+          email: resumeData?.email,
+          phone: resumeData?.phone,
+        }),
       });
       if (!res.ok) throw new Error("Order creation failed");
       orderData = await res.json();
@@ -319,8 +334,10 @@ export default function ResumePreview() {
       templateId: activeTemplate,
       onSuccess: (paymentId) => {
         setDownloadPaymentId(paymentId);
+        setLastPaymentId(paymentId);
         setDownloadUnlocked(true);
         sessionStorage.setItem(`downloadPaymentId_${sessionId}`, paymentId);
+        sessionStorage.setItem(`lastPaymentId_${sessionId}`, paymentId);
         toast({
           title: "Payment successful!",
           description: "Choose PDF or Word to download your resume.",
@@ -336,6 +353,40 @@ export default function ResumePreview() {
     setDownloadUnlocked(false);
     setDownloadPaymentId(null);
     sessionStorage.removeItem(`downloadPaymentId_${sessionId}`);
+  };
+
+  const handleDownloadInvoice = async () => {
+    setIsDownloadingInvoice(true);
+    try {
+      const res = await fetch(`${API_URL}/api/download/invoice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          paymentId: lastPaymentId,
+          resumeData: displayData
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Invoice generation failed");
+      }
+      const blob = await res.blob();
+      triggerBlobDownload(blob, `invoice.pdf`);
+      setInvoiceDownloaded(true);
+      toast({
+        title: "Invoice downloaded",
+        description: "Your tax invoice/receipt has been saved.",
+      });
+    } catch (e) {
+      toast({
+        title: "Invoice download failed",
+        description: e.message || "Could not generate invoice. Try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloadingInvoice(false);
+    }
   };
 
   // ── Download PDF (after unlock) ──
@@ -431,8 +482,10 @@ export default function ResumePreview() {
       setOptimizePaymentId(null);
       // Unlock download as part of the optimize purchase
       setDownloadPaymentId(paymentId);
+      setLastPaymentId(paymentId);
       setDownloadUnlocked(true);
       sessionStorage.setItem(`downloadPaymentId_${sessionId}`, paymentId);
+      sessionStorage.setItem(`lastPaymentId_${sessionId}`, paymentId);
     } catch {
       setOptimizeFailed(true);
       toast({
@@ -597,86 +650,6 @@ export default function ResumePreview() {
           <div className="lg:col-span-4">
             <div className="sticky top-8 space-y-4">
 
-
-
-               {/* ─────────────────────────────────────
-                  OPTIMIZE CARD
-                  Hidden after optimization completes
-              ───────────────────────────────────── */}
-              {!hasOptimized && !isOptimizing && (
-                <div
-                  className="bg-white rounded-2xl p-5 border-2 shadow-sm"
-                  style={{ borderColor: COLORS.green }}
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: `${COLORS.green}18` }}
-                    >
-                      <ResumeOptimizeIcon size={19} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-800 text-sm">
-                        AI Optimized Resume
-                      </h3>
-                      <span
-                        className="text-xs font-bold"
-                        style={{ color: COLORS.green }}
-                      >
-                        ₹19 · One-time AI enhancement
-                      </span>
-                    </div>
-                  </div>
-
-                  <ul className="text-xs text-slate-600 space-y-1.5 mb-4">
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
-                      ATS-friendly keywords
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
-                      Strong action verbs
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
-                      Quantified achievements
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
-                      Compare original vs AI version
-                    </li>
-                  </ul>
-
-                  {optimizeFailed ? (
-                    // Retry state — optimization failed but payment was made
-                    <div>
-                      <div className="flex items-center gap-2 mb-3 p-2.5 bg-red-50 rounded-lg">
-                        <AlertCircle size={14} className="text-red-400 flex-shrink-0" />
-                        <p className="text-xs text-red-600">
-                          Optimization failed. No additional charge for retry.
-                        </p>
-                      </div>
-                      <button
-                        onClick={handleRetryOptimization}
-                        className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90 flex items-center justify-center gap-2"
-                        style={{ backgroundColor: COLORS.green }}
-                      >
-                        <ResumeOptimizeIcon size={15} />
-                        Retry Optimization (Free)
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={handleOptimize}
-                      className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
-                      style={{ backgroundColor: COLORS.green }}
-                    >
-                      Pay ₹19 &amp; Optimize
-                    </button>
-                  )}
-                </div>
-              )}
-
               {/* ─────────────────────────────────────
                   DOWNLOAD CARD
               ───────────────────────────────────── */}
@@ -777,10 +750,120 @@ export default function ResumePreview() {
                       )}
                     </button>
                   )}
+
+                  {/* ── Invoice Button (shown when paid/unlocked) ── */}
+                  {lastPaymentId && !isDownloadingInvoice && (
+                    <button
+  onClick={handleDownloadInvoice}
+  disabled={isDownloadingInvoice}
+  className="w-full mt-3 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold 
+           text-white bg-slate-800 
+           hover:bg-slate-900 active:scale-[0.98] 
+           transition-all duration-200"
+>
+  {isDownloadingInvoice ? (
+    <>
+      <span className="h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+      Downloading...
+    </>
+  ) : (
+    <>
+      <Download size={16} className="text-slate-200" />
+      Download Invoice
+    </>
+  )}
+</button>
+                  )}
+
+                  {isDownloadingInvoice && (
+                    <button
+                      className="w-full py-2.5 rounded-xl font-bold text-sm bg-slate-100 text-slate-600 flex items-center justify-center gap-2 disabled:opacity-70"
+                      disabled
+                    >
+                      <Loader2 size={15} className="animate-spin" />
+                      Generating Invoice…
+                    </button>
+                  )}
                 </div>
               </div>
 
-             
+              {/* ─────────────────────────────────────
+                  OPTIMIZE CARD
+                  Hidden after optimization completes
+              ───────────────────────────────────── */}
+              {!hasOptimized && !isOptimizing && (
+                <div
+                  className="bg-white rounded-2xl p-5 border-2 shadow-sm"
+                  style={{ borderColor: COLORS.green }}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{ backgroundColor: `${COLORS.green}18` }}
+                    >
+                      <ResumeOptimizeIcon size={19} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-800 text-sm">
+                        AI Optimized Resume
+                      </h3>
+                      <span
+                        className="text-xs font-bold"
+                        style={{ color: COLORS.green }}
+                      >
+                        ₹19 · One-time AI enhancement
+                      </span>
+                    </div>
+                  </div>
+
+                  <ul className="text-xs text-slate-600 space-y-1.5 mb-4">
+                    <li className="flex items-center gap-1.5">
+                      <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
+                      ATS-friendly keywords
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
+                      Strong action verbs
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
+                      Quantified achievements
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
+                      Compare original vs AI version
+                    </li>
+                  </ul>
+
+                  {optimizeFailed ? (
+                    // Retry state — optimization failed but payment was made
+                    <div>
+                      <div className="flex items-center gap-2 mb-3 p-2.5 bg-red-50 rounded-lg">
+                        <AlertCircle size={14} className="text-red-400 flex-shrink-0" />
+                        <p className="text-xs text-red-600">
+                          Optimization failed. No additional charge for retry.
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleRetryOptimization}
+                        className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90 flex items-center justify-center gap-2"
+                        style={{ backgroundColor: COLORS.green }}
+                      >
+                        <ResumeOptimizeIcon size={15} />
+                        Retry Optimization (Free)
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleOptimize}
+                      className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                      style={{ backgroundColor: COLORS.green }}
+                    >
+                      Pay ₹19 &amp; Optimize
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* ─────────────────────────────────────
                   OPTIMIZING — loading state
