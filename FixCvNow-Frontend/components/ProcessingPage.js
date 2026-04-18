@@ -42,16 +42,28 @@ const OPTIMIZATION_STEPS = [
 const MIN_EXTRACTION_DURATION = 15000
 const MIN_OPTIMIZATION_DURATION = 15000
 
+// Time allocated for each extraction step (in milliseconds)
+const STEP_DURATIONS = {
+  upload: 2000,      // 2 seconds
+  personal: 2000,    // 2 seconds
+  experience: 2500,  // 2.5 seconds
+  education: 2000,   // 2 seconds
+  skills: 2000,      // 2 seconds
+  extras: 2000,      // 2 seconds
+  done: 1500,        // 1.5 seconds
+}
+
 export default function ProcessingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('id')
   const phase = searchParams.get('phase') || 'extraction'
 
-  // Extraction state — driven by SSE events
+  // Extraction state — driven by SSE events with time delays
   const [completedSections, setCompletedSections] = useState(new Set())
   const [currentSectionLabel, setCurrentSectionLabel] = useState(EXTRACTION_SECTIONS[0].label)
   const [extractionProgress, setExtractionProgress] = useState(0)
+  const [currentStepIndex, setCurrentStepIndex] = useState(0)
 
   // Optimization state — fake timer
   const [optStep, setOptStep] = useState(0)
@@ -66,9 +78,9 @@ export default function ProcessingPage() {
   const realExtractionCompleteRef = useRef(false)
   const realOptimizationCompleteRef = useRef(false)
   
-  // Progress animation refs
-  const progressIntervalRef = useRef(null)
-  const targetProgressRef = useRef(0)
+  // Step timing refs
+  const stepTimerRef = useRef(null)
+  const currentStepStartTimeRef = useRef(null)
 
   // ─────────────────────────────────────────────
   // Prevent browser back
@@ -81,29 +93,80 @@ export default function ProcessingPage() {
   }, [])
 
   // ─────────────────────────────────────────────
-  // Smooth progress animation for extraction
+  // Step progression for extraction (time-based)
   // ─────────────────────────────────────────────
-  const startSmoothProgress = useCallback(() => {
-    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
+  const advanceToNextStep = useCallback(() => {
+    if (realExtractionCompleteRef.current) return
     
-    progressIntervalRef.current = setInterval(() => {
-      setExtractionProgress(prev => {
-        // Don't exceed target progress
-        if (prev >= targetProgressRef.current) return prev
-        // Smoothly increase toward target
-        const increment = Math.max(1, Math.ceil((targetProgressRef.current - prev) / 20))
-        return Math.min(prev + increment, targetProgressRef.current)
-      })
-    }, 100)
-  }, [])
-
-  // Update target progress when sections complete
-  const updateTargetProgress = useCallback((progressValue) => {
-    targetProgressRef.current = progressValue
-    if (!progressIntervalRef.current) {
-      startSmoothProgress()
+    const nextIndex = currentStepIndex + 1
+    if (nextIndex >= EXTRACTION_SECTIONS.length) {
+      // All steps completed
+      realExtractionCompleteRef.current = true
+      setIsComplete(true)
+      setExtractionProgress(95)
+      setCurrentSectionLabel('Almost done!')
+      
+      // Wait for minimum duration
+      const elapsedTime = Date.now() - startTimeRef.current
+      const remainingTime = Math.max(0, MIN_EXTRACTION_DURATION - elapsedTime)
+      
+      if (remainingTime > 0) {
+        setTimeout(() => {
+          setExtractionProgress(100)
+          setTimeout(() => {
+            window.location.replace(`/?id=${sessionId}`)
+          }, 300)
+        }, remainingTime)
+      } else {
+        setExtractionProgress(100)
+        setTimeout(() => {
+          window.location.replace(`/?id=${sessionId}`)
+        }, 300)
+      }
+      return
     }
-  }, [startSmoothProgress])
+    
+    // Move to next step
+    const nextSection = EXTRACTION_SECTIONS[nextIndex]
+    setCurrentStepIndex(nextIndex)
+    setCompletedSections(prev => new Set([...prev, nextSection.key]))
+    setCurrentSectionLabel(nextSection.label)
+    
+    // Update progress based on completed sections count
+    const doneCount = PARALLEL_SECTION_KEYS.filter(k => 
+      [...completedSections, nextSection.key].includes(k)
+    ).length
+    setExtractionProgress(COUNT_TO_PROGRESS[doneCount] ?? 12)
+    
+    // Schedule next step
+    const stepDuration = STEP_DURATIONS[nextSection.key] || 2000
+    if (stepTimerRef.current) clearTimeout(stepTimerRef.current)
+    stepTimerRef.current = setTimeout(advanceToNextStep, stepDuration)
+  }, [currentStepIndex, completedSections, sessionId])
+
+  // ─────────────────────────────────────────────
+  // Start the step-by-step extraction
+  // ─────────────────────────────────────────────
+  const startStepByStepExtraction = useCallback(() => {
+    setError(null)
+    setIsComplete(false)
+    setCompletedSections(new Set())
+    setExtractionProgress(0)
+    setCurrentStepIndex(0)
+    setCurrentSectionLabel(EXTRACTION_SECTIONS[0].label)
+    realExtractionCompleteRef.current = false
+    
+    // Record start time
+    startTimeRef.current = Date.now()
+    currentStepStartTimeRef.current = Date.now()
+    
+    // Clear any existing timer
+    if (stepTimerRef.current) clearTimeout(stepTimerRef.current)
+    
+    // Start first step (upload)
+    const firstStepDuration = STEP_DURATIONS['upload'] || 2000
+    stepTimerRef.current = setTimeout(advanceToNextStep, firstStepDuration)
+  }, [advanceToNextStep])
 
   // ─────────────────────────────────────────────
   // Fake progress timer for optimization phase with minimum duration
@@ -116,52 +179,35 @@ export default function ProcessingPage() {
       startTimeRef.current = Date.now()
     }
 
-    const interval = setInterval(() => {
-      setOptProgress((prev) => {
-        // Don't go to 100% until real completion happens
-        if (prev >= 95) return 95
-        // Slower, more gradual increase
-        if (prev < 20) return prev + 1
-        if (prev < 40) return prev + 0.8
-        if (prev < 60) return prev + 0.6
-        if (prev < 80) return prev + 0.4
-        return prev + 0.2
-      })
-    }, 200)
-
+    // Calculate step based on elapsed time for smooth progression
+    const updateOptimizationProgress = () => {
+      if (realOptimizationCompleteRef.current) return
+      
+      const elapsedTime = Date.now() - startTimeRef.current
+      const targetStep = Math.min(
+        Math.floor((elapsedTime / MIN_OPTIMIZATION_DURATION) * OPTIMIZATION_STEPS.length),
+        OPTIMIZATION_STEPS.length - 1
+      )
+      
+      if (targetStep > optStep) {
+        setOptStep(targetStep)
+      }
+      
+      // Progress goes from 0 to 95 over the minimum duration
+      const targetProgress = Math.min(95, (elapsedTime / MIN_OPTIMIZATION_DURATION) * 95)
+      setOptProgress(targetProgress)
+    }
+    
+    const interval = setInterval(updateOptimizationProgress, 200)
+    updateOptimizationProgress() // Initial update
+    
     return () => clearInterval(interval)
-  }, [phase, isComplete])
-
-  useEffect(() => {
-    if (phase !== 'optimization') return
-    const stepIndex = Math.min(
-      Math.floor((optProgress / 95) * OPTIMIZATION_STEPS.length),
-      OPTIMIZATION_STEPS.length - 1
-    )
-    setOptStep(stepIndex)
-  }, [optProgress, phase])
+  }, [phase, isComplete, optStep])
 
   // ─────────────────────────────────────────────
-  // Extraction via SSE ReadableStream with minimum duration
+  // Extraction via SSE - now just stores data without affecting UI timing
   // ─────────────────────────────────────────────
   const performExtraction = useCallback(async () => {
-    setError(null)
-    setIsComplete(false)
-    setCompletedSections(new Set())
-    setExtractionProgress(0)
-    setCurrentSectionLabel(EXTRACTION_SECTIONS[0].label)
-    realExtractionCompleteRef.current = false
-    targetProgressRef.current = 0
-    
-    // Record start time
-    startTimeRef.current = Date.now()
-
-    const controller = new AbortController()
-    abortRef.current = controller
-
-    // Start smooth progress animation
-    startSmoothProgress()
-
     try {
       const file = sessionStorage_util.getUploadedFile()
       if (!file) throw new Error('Session expired. Please upload your file again.')
@@ -172,7 +218,6 @@ export default function ProcessingPage() {
       const res = await fetch(`${API_URL}/api/extract`, {
         method: 'POST',
         body: formData,
-        signal: controller.signal,
       })
 
       if (!res.ok) {
@@ -180,7 +225,7 @@ export default function ProcessingPage() {
         throw new Error(data.error || 'Extraction failed. Please try again.')
       }
 
-      // Read SSE stream
+      // Read SSE stream in background
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
@@ -203,59 +248,14 @@ export default function ProcessingPage() {
             continue
           }
 
-          if (event.type === 'progress') {
-            if (event.status === 'done') {
-              setCompletedSections((prev) => {
-                const next = new Set([...prev, event.section])
-                const doneCount = PARALLEL_SECTION_KEYS.filter(k => next.has(k)).length
-                const newProgress = COUNT_TO_PROGRESS[doneCount] ?? 12
-                updateTargetProgress(newProgress)
-                setCurrentSectionLabel(`${doneCount} of 5 sections complete`)
-                return next
-              })
-            } else {
-              updateTargetProgress(8)
-              setCurrentSectionLabel(event.label)
-            }
-          }
-
           if (event.type === 'done') {
-            realExtractionCompleteRef.current = true
-            
+            // Store the extracted data without interrupting UI timing
             leadsStorage.updateLead(sessionId, event.leadData)
             resumeStorage.saveResumeData(sessionId, event.resumeData)
             if (event.fileId) {
               sessionStorage.setItem(`fileId_${sessionId}`, event.fileId)
             }
             sessionStorage.setItem(`extracted_${sessionId}`, 'true')
-
-            setCompletedSections(new Set(EXTRACTION_SECTIONS.map((s) => s.key)))
-            updateTargetProgress(95)
-            setCurrentSectionLabel('Almost done!')
-            setIsComplete(true)
-
-            const elapsedTime = Date.now() - startTimeRef.current
-            const remainingTime = Math.max(0, MIN_EXTRACTION_DURATION - elapsedTime)
-            
-            // Clear progress interval
-            if (progressIntervalRef.current) {
-              clearInterval(progressIntervalRef.current)
-              progressIntervalRef.current = null
-            }
-            
-            if (remainingTime > 0) {
-              setTimeout(() => {
-                setExtractionProgress(100)
-                setTimeout(() => {
-                  window.location.replace(`/?id=${sessionId}`)
-                }, 300)
-              }, remainingTime)
-            } else {
-              setExtractionProgress(100)
-              setTimeout(() => {
-                window.location.replace(`/?id=${sessionId}`)
-              }, 300)
-            }
           }
 
           if (event.type === 'error') {
@@ -263,24 +263,20 @@ export default function ProcessingPage() {
           }
         }
       }
-
     } catch (err) {
-      if (err.name === 'AbortError') return
       console.warn('[ProcessingPage] Extraction error:', err.message)
       setError(err.message || 'Failed to extract resume. Please try again.')
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current)
-        progressIntervalRef.current = null
+      if (stepTimerRef.current) {
+        clearTimeout(stepTimerRef.current)
       }
     }
-  }, [sessionId, startSmoothProgress, updateTargetProgress])
+  }, [sessionId])
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      abortRef.current?.abort()
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current)
+      if (stepTimerRef.current) {
+        clearTimeout(stepTimerRef.current)
       }
     }
   }, [])
@@ -302,46 +298,32 @@ export default function ProcessingPage() {
       return
     }
 
-    const timer = setTimeout(performExtraction, 800)
-    return () => clearTimeout(timer)
-  }, [sessionId, phase, router, performExtraction])
+    // Start both the UI step progression and the actual API call
+    startStepByStepExtraction()
+    performExtraction()
+    
+    return () => {
+      if (stepTimerRef.current) clearTimeout(stepTimerRef.current)
+    }
+  }, [sessionId, phase, router, startStepByStepExtraction, performExtraction])
 
   // ─────────────────────────────────────────────
-  // Optimization completion handler with gradual steps
+  // Optimization completion handler
   // ─────────────────────────────────────────────
   const completeOptimization = useCallback(() => {
     if (realOptimizationCompleteRef.current) return
     realOptimizationCompleteRef.current = true
     
-    // Gradually increase steps instead of jumping
-    const stepInterval = setInterval(() => {
-      setOptStep(prev => {
-        if (prev >= OPTIMIZATION_STEPS.length - 1) {
-          clearInterval(stepInterval)
-          return prev
-        }
-        return prev + 1
-      })
-      setOptProgress(prev => {
-        if (prev >= 95) {
-          return prev
-        }
-        return Math.min(prev + 5, 95)
-      })
-    }, 800)
+    // Set final progress
+    setOptProgress(100)
+    setOptStep(OPTIMIZATION_STEPS.length - 1)
+    setIsComplete(true)
     
     const elapsedTime = Date.now() - startTimeRef.current
     const remainingTime = Math.max(0, MIN_OPTIMIZATION_DURATION - elapsedTime)
     
     setTimeout(() => {
-      clearInterval(stepInterval)
-      setOptProgress(100)
-      setOptStep(OPTIMIZATION_STEPS.length - 1)
-      setIsComplete(true)
-      
-      setTimeout(() => {
-        window.location.replace(`/?id=${sessionId}`)
-      }, 300)
+      window.location.replace(`/?id=${sessionId}`)
     }, remainingTime)
   }, [sessionId])
 
@@ -356,7 +338,7 @@ export default function ProcessingPage() {
     // Simulate API call - replace this with your actual optimization API call
     const timer = setTimeout(() => {
       completeOptimization()
-    }, 2000)
+    }, 2000) // Simulate 2-second real processing - replace with actual API
     
     return () => clearTimeout(timer)
   }, [phase, completeOptimization])
@@ -385,7 +367,7 @@ export default function ProcessingPage() {
           <p className="text-slate-500 mb-8 leading-relaxed text-sm">{error}</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
-              onClick={performExtraction}
+              onClick={() => window.location.reload()}
               className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all hover:scale-105 active:scale-95"
               style={{ backgroundColor: COLORS.green }}
             >
@@ -450,8 +432,7 @@ export default function ProcessingPage() {
           {phase === 'extraction' ? (
             EXTRACTION_SECTIONS.map((section, index) => {
               const isDone = completedSections.has(section.key)
-              const firstIncompleteIndex = EXTRACTION_SECTIONS.findIndex(s => !completedSections.has(s.key))
-              const isActive = !isDone && index === firstIncompleteIndex
+              const isActive = !isDone && index === currentStepIndex
               return (
                 <div key={section.key} className="flex items-center gap-4 mb-4">
                   <div
@@ -475,27 +456,31 @@ export default function ProcessingPage() {
               )
             })
           ) : (
-            OPTIMIZATION_STEPS.map((step, index) => (
-              <div key={index} className="flex items-center gap-4 mb-4">
-                <div
-                  className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold transition-all ${
-                    index < optStep ? 'scale-100' : index === optStep ? 'scale-110 animate-pulse' : ''
-                  }`}
-                  style={{
-                    backgroundColor: index <= optStep ? COLORS.green : '#cbd5e1',
-                  }}
-                >
-                  {index < optStep ? '✓' : index === optStep ? '⚡' : index + 1}
+            OPTIMIZATION_STEPS.map((step, index) => {
+              const isDone = index < optStep
+              const isActive = index === optStep
+              return (
+                <div key={index} className="flex items-center gap-4 mb-4">
+                  <div
+                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold transition-all ${
+                      isDone ? 'scale-100' : isActive ? 'scale-110 animate-pulse' : ''
+                    }`}
+                    style={{
+                      backgroundColor: isDone || isActive ? COLORS.green : '#cbd5e1',
+                    }}
+                  >
+                    {isDone ? '✓' : isActive ? '⚡' : index + 1}
+                  </div>
+                  <span
+                    className={`text-sm md:text-base transition-all ${
+                      isDone || isActive ? 'text-slate-800 font-medium' : 'text-slate-400'
+                    }`}
+                  >
+                    {step}
+                  </span>
                 </div>
-                <span
-                  className={`text-sm md:text-base transition-all ${
-                    index <= optStep ? 'text-slate-800 font-medium' : 'text-slate-400'
-                  }`}
-                >
-                  {step}
-                </span>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
 
@@ -511,7 +496,7 @@ export default function ProcessingPage() {
           </div>
           <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
             <div
-              className="h-full rounded-full transition-all duration-300 ease-out"
+              className="h-full rounded-full transition-all duration-500 ease-out"
               style={{ width: `${displayProgress}%`, backgroundColor: COLORS.green }}
             />
           </div>
