@@ -16,31 +16,31 @@ export default function InlineTemplateChooser({
   const templates = [
     {
       id: 1,
-      name: "Classic Professional",
+      name: "Corporate Standard",
       preview: <ClassicPreview data={resumeData} />,
       scale: 0.28,
     },
     {
       id: 2,
-      name: "Navy",
+      name: "Senior Leadership",
       preview: <NavyPreview data={resumeData} />,
       scale: 0.28,
     },
     {
       id: 3,
-      name: "Serif",
+      name: "Modern Corporate",
       preview: <SerifPreview data={resumeData} />,
       scale: 0.28,
     },
     {
       id: 4,
-      name: "Modern Minimalist",
+      name: "Startup & Tech",
       preview: <ModernPreview data={resumeData} />,
       scale: 0.19,
     },
     {
       id: 5,
-      name: "Classic Bold",
+      name: "Impact Resume",
       preview: <ClassicBoldPreview data={resumeData} />,
       scale: 0.28,
     },

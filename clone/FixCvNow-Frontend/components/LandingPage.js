@@ -75,9 +75,10 @@ export default function LandingPage() {
           <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm relative group hover:shadow-md transition-shadow">
             <div className="absolute top-4 left-4 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: COLORS.green }}>1</div>
             <div className="flex flex-col items-center mt-4">
-              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-6  group-hover:text-green-500 transition-colors">
-                <ResumeUploadIcon size={120} />
-              </div>
+           {/* Increased container to w-32 (128px) to accommodate the large icon */}
+<div className="flex items-center justify-center mb-6 group-hover:text-green-500 transition-colors">
+  <ResumeUploadIcon size={120} />
+</div>
               <h3 className="font-bold text-lg mb-3" style={{ color: COLORS.blue }}>Upload Your CV</h3>
               <p className="text-sm  leading-relaxed">
                 Upload your existing CV in PDF, Word, or text format. No login, No email, No friction.
@@ -89,8 +90,8 @@ export default function LandingPage() {
           <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm relative group hover:shadow-md transition-shadow">
             <div className="absolute top-4 left-4 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: COLORS.green }}>2</div>
             <div className="flex flex-col items-center mt-4">
-              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-6  group-hover:text-green-500 transition-colors">
-                <AiBrainIcon size={120} />
+              <div className="flex items-center justify-center mb-6 group-hover:text-green-500 transition-colors">
+                <AiBrainIcon style={{marginTop:-15}} size={120} />
               </div>
               <h3 className="font-bold text-lg mb-3" style={{ color: COLORS.blue }}>AI Upgrades Structure & Content</h3>
               <p className="text-sm  leading-relaxed">
@@ -103,10 +104,10 @@ export default function LandingPage() {
           <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm relative group hover:shadow-md transition-shadow">
             <div className="absolute top-4 left-4 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: COLORS.green }}>3</div>
             <div className="flex flex-col items-center mt-4">
-              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-6  group-hover:text-green-500 transition-colors">
-                <DocumentPreviewIcon size={120} />
+              <div className="flex items-center justify-center mb-6 group-hover:text-green-500 transition-colors">
+                <DocumentPreviewIcon style={{marginTop:-10}} size={120} />
               </div>
-              <h3 className="font-bold text-lg mb-3" style={{ color: COLORS.blue }}>Preview 5 Professional Templates</h3>
+              <h3 className="font-bold text-lg mb-3" style={{ color: COLORS.blue }}>Preview Professional templates.</h3>
               <p className="text-sm  leading-relaxed">
                 See your upgraded CV in 6 modern templates.
               </p>
@@ -117,8 +118,8 @@ export default function LandingPage() {
           <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm relative group hover:shadow-md transition-shadow">
             <div className="absolute top-4 left-4 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: COLORS.green }}>4</div>
             <div className="flex flex-col items-center mt-4">
-              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-6  group-hover:text-green-500 transition-colors">
-                <SecureDownloadIcon size={120} />
+              <div className="flex items-center justify-center mb-6 group-hover:text-green-500 transition-colors">
+                <SecureDownloadIcon style={{marginTop:-10}} size={120} />
               </div>
               <h3 className="font-bold text-lg mb-3" style={{ color: COLORS.blue }}>Pay and Download</h3>
               <p className="text-sm  leading-relaxed">
@@ -129,31 +130,34 @@ export default function LandingPage() {
         </div>
 
         {/* Banner call to action */}
-        <div className="bg-slate-50 rounded-2xl p-2 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-100 shadow-inner">
-          <div className="flex items-center gap-4 ">
-            <div className=" rounded-full bg-white flex items-center justify-center ">
-              <SecureDownloadIcon size={120} />
-            </div>
-            <div>
-              <p className="font-bold text-slate-800">Your CV is automatically deleted after 30 minutes.</p>
-              <p className="text-sm opacity-70">No account. No tracking. No storage. Download other templates within 30 mins if you want.</p>
-            </div>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <button
-              onClick={handleStart}
-              className="px-8 py-3 rounded-xl text-white font-bold hover:opacity-90 transition-opacity whitespace-nowrap"
-              style={{ backgroundColor: COLORS.green }}
-            >
-              Upload Your CV Now
-            </button>
-            <div className="flex items-center gap-3 text-[10px]  font-medium uppercase tracking-widest">
-              <span>No sign-up</span>
-              <span>•</span>
-              <span>Instant download</span>
-            </div>
-          </div>
-        </div>
+       {/* Changed p-8 to py-4 (vertical) and px-6 (horizontal) to slim it down */}
+{/* Reduced md:p-8 to md:py-5 for a slimmer vertical profile */}
+<div className="bg-white rounded-2xl p-4 md:py-5 md:px-8 flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-100 shadow-inner">
+  <div className="flex items-center gap-4">
+    <div className="rounded-full bg-white flex items-center justify-center">
+      {/* Brought this down from 220 to 140 — still large, but not overwhelming */}
+      <ResumeUploadIcon size={140} />
+    </div>
+    <div>
+      <p className="font-bold text-slate-800 text-lg">Your Resume Is Ready. Now Choose How Strong You Want It.</p>
+      <p className="text-sm opacity-70">Choose Between Professional Clean OR AI Optimized.</p>
+    </div>
+  </div>
+  <div className="flex flex-col items-center gap-2">
+    <button
+      onClick={handleStart}
+      className="px-8 py-3 rounded-xl text-white font-bold hover:opacity-90 transition-opacity whitespace-nowrap"
+      style={{ backgroundColor: COLORS.green }}
+    >
+      Try Now
+    </button>
+    <div className="flex items-center gap-3 text-[10px] font-medium uppercase tracking-widest">
+      <span>No sign-up</span>
+      <span>•</span>
+      <span>Instant download</span>
+    </div>
+  </div>
+</div>
       </section>
 
       {/* Pricing Section */}
@@ -175,7 +179,7 @@ export default function LandingPage() {
     {/* PROFESSIONAL CV */}
     <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col">
       <div className="mb-5 px-5 py-1.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider w-fit">
-        Professional CV
+       Professional Clean
       </div>
 
       <div className="flex items-end gap-2 mb-1">
@@ -222,7 +226,7 @@ export default function LandingPage() {
       </div>
 
       <div className="mb-5 px-5 py-1.5 rounded-full bg-green-100 text-green-700 text-xs font-bold uppercase tracking-wider w-fit">
-        AI Career Upgrade
+        AI Optimized
       </div>
 
       <div className="flex items-end gap-2 mb-1">
@@ -233,7 +237,7 @@ export default function LandingPage() {
 
       <ul className="space-y-3 mb-8 text-sm flex-1">
         {[
-          'Everything in Professional CV',
+          'Everything in Professional Clean',
           'Profile Summary professionally rewritten',
           'AI Generated Role-Specific Summary',
           'AI Extracted & Structured Skills Section',

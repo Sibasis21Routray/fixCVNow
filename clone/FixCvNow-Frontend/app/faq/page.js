@@ -165,14 +165,14 @@ export default function FAQPage() {
         </div>
 
         {/* CTA */}
-        <div className="max-w-3xl mx-auto px-6 pb-16 text-center">
+        {/* <div className="max-w-3xl mx-auto px-6 pb-16 text-center">
           <p className="text-slate-500 text-sm">
             Still have questions?{' '}
             <a href="mailto:support@fixcvnow.com" className="font-semibold hover:underline" style={{ color: COLORS.green }}>
               Contact our support team
             </a>
           </p>
-        </div>
+        </div> */}
       </main>
       <Footer />
     </div>
