@@ -65,6 +65,10 @@ const { default: paymentRoute } = await import(
   pathToFileURL(path.resolve(__dirname, 'routes/payment.js')).href
 )
 
+const { checkIPBlock } = await import(
+  pathToFileURL(path.resolve(__dirname, 'lib/middleware/ipBlock.js')).href
+)
+
 // --------------------------------------------------
 // Init App
 // --------------------------------------------------
@@ -81,7 +85,8 @@ app.use(cors({
     'https://www.fixcvnow.com'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  credentials: true,
+  exposedHeaders: ['Content-Disposition']
 }))
 
 app.options('*', cors())
@@ -100,9 +105,9 @@ app.use(express.json({ limit: '10mb' }))
 // --------------------------------------------------
 // Routes
 // --------------------------------------------------
-app.use('/api/extract',  extractRoute)
-app.use('/api/optimize', optimizeRoute)
-app.use('/api/download', downloadRoute)
+app.use('/api/extract',  checkIPBlock, extractRoute)
+app.use('/api/optimize', checkIPBlock, optimizeRoute)
+app.use('/api/download', checkIPBlock, downloadRoute)
 app.use('/api/payment',  paymentRoute)
 app.use('/admin',        adminRoute)
 app.use('/api/preview',  previewRoute)

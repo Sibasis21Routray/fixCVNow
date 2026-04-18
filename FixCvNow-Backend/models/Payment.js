@@ -15,6 +15,7 @@ const paymentSchema = new mongoose.Schema({
   customerName: { type: String, default: null },
   email: { type: String, default: null },
   phone: { type: String, default: null },
+  customerIP: { type: String, default: null },
   createdAt: { type: Date, default: Date.now, index: true },
   paidAt: { type: Date, default: null },
 })

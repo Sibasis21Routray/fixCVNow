@@ -9,6 +9,7 @@ import { zodTextFormat } from 'openai/helpers/zod'
 import { isDbConnected } from '../db/connect.js'
 import { Lead } from '../models/Lead.js'
 import { TokenUsage } from '../models/TokenUsage.js'
+import { incrementParseCount } from '../lib/middleware/ipBlock.js'
 
 const router = Router()
 const upload = multer({ storage: multer.memoryStorage() })
@@ -264,7 +265,14 @@ async function extractSection(fileRef, schema, schemaName, systemPrompt, userPro
 // POST /api/extract  — SSE response
 // ─────────────────────────────────────────────
 router.post('/', upload.single('file'), async (req, res) => {
-  console.log('[Extract] Request received')
+  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress
+  const isBlocked = await incrementParseCount(ip)
+  
+  if (isBlocked) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Too many requests without conversion. Try again in 10 hours.' })
+  }
+
+  console.log(`[Extract] Request received from IP: ${ip}`)
 
   // Set SSE headers immediately so client can start reading
   res.setHeader('Content-Type', 'text/event-stream')

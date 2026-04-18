@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { zodTextFormat } from 'openai/helpers/zod'
 import { isDbConnected } from '../db/connect.js'
 import { TokenUsage } from '../models/TokenUsage.js'
+import { trackConversion } from '../lib/middleware/ipBlock.js'
 
 const router = Router()
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -175,6 +176,9 @@ router.post('/', async (req, res) => {
     }
 
     res.json({ success: true, optimizedData, ats: optimized.ats })
+    
+    // Reset IP block count on conversion
+    trackConversion(req.userIP).catch(() => {})
 
   } catch (error) {
     console.error('[Optimize] Error:', error)

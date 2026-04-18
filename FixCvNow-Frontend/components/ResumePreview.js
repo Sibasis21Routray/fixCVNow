@@ -364,8 +364,14 @@ export default function ResumePreview() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Invoice generation failed");
       }
+      const contentDisposition = res.headers.get("Content-Disposition");
+      let filename = `invoice_${pid.slice(-6)}.pdf`;
+      if (contentDisposition && contentDisposition.includes("filename=")) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) filename = match[1];
+      }
       const blob = await res.blob();
-      triggerBlobDownload(blob, `invoice_${pid.slice(-6)}.pdf`);
+      triggerBlobDownload(blob, filename);
     } catch (e) {
       toast({
         title: "Invoice download failed",
@@ -402,8 +408,14 @@ export default function ResumePreview() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "PDF generation failed");
       }
+      const contentDisposition = res.headers.get("Content-Disposition");
+      let filename = `${displayData.name || "resume"}.pdf`;
+      if (contentDisposition && contentDisposition.includes("filename=")) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) filename = match[1];
+      }
       const blob = await res.blob();
-      triggerBlobDownload(blob, `${displayData.name || "resume"}.pdf`);
+      triggerBlobDownload(blob, filename);
       resetDownloadLock();
     } catch (e) {
       toast({
@@ -435,8 +447,14 @@ export default function ResumePreview() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Word generation failed");
       }
+      const contentDisposition = res.headers.get("Content-Disposition");
+      let filename = `${displayData.name || "resume"}.docx`;
+      if (contentDisposition && contentDisposition.includes("filename=")) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) filename = match[1];
+      }
       const blob = await res.blob();
-      triggerBlobDownload(blob, `${displayData.name || "resume"}.docx`);
+      triggerBlobDownload(blob, filename);
       resetDownloadLock();
     } catch (e) {
       toast({

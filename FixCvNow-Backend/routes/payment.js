@@ -5,6 +5,7 @@ import Razorpay from 'razorpay'
 import crypto from 'crypto'
 import { Payment } from '../models/Payment.js'
 import { createInvoiceFromPayment } from '../lib/invoice.js'
+import { trackConversion } from '../lib/middleware/ipBlock.js'
 
 const router = Router()
 
@@ -43,6 +44,7 @@ router.post('/create-order', async (req, res) => {
       receipt: `fcn_${sessionId.slice(-8)}_${purpose.slice(0, 3)}_${Date.now()}`,
     })
 
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress
     await Payment.create({
       sessionId,
       orderId: order.id,
@@ -52,6 +54,7 @@ router.post('/create-order', async (req, res) => {
       customerName: customerName ?? null,
       email: email ?? null,
       phone: phone ?? null,
+      customerIP: ip,
       status: 'created',
     })
 
@@ -118,6 +121,10 @@ router.post('/verify', async (req, res) => {
     // Generate invoice in background
     createInvoiceFromPayment(payment).catch(e => console.error('[Payment] Invoice generation failed:', e.message))
 
+    // Reset IP block count on payment verification
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress
+    trackConversion(ip).catch(() => {})
+
     console.log(`[Payment] Verified: ${orderId} | paymentId: ${razorpay_payment_id}`)
     res.json({ success: true, paymentId: razorpay_payment_id })
 
@@ -171,6 +178,8 @@ router.post('/webhook', (req, res) => {
     ).then((payment) => {
       if (payment) {
         createInvoiceFromPayment(payment).catch(e => console.error('[Webhook] Invoice generation failed:', e.message))
+        // Reset IP block count on webhook conversion
+        trackConversion(payment.customerIP).catch(() => {})
       }
     }).catch((err) => console.error('[Webhook] DB update error:', err.message))
   }

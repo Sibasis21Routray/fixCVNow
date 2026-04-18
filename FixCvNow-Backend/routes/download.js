@@ -8,12 +8,14 @@ import { renderToBuffer } from '@react-pdf/renderer'
 import { Packer } from 'docx'
 import { Payment } from '../models/Payment.js'
 import { Invoice } from '../models/Invoice.js'
+import { trackConversion } from '../lib/middleware/ipBlock.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // pathToFileURL required on Windows for dynamic imports with absolute paths
 const { getPDFComponent, getInvoicePDFComponent } = await import(pathToFileURL(path.resolve(__dirname, '../lib/pdf/index.js')).href)
 const { getWordDocument } = await import(pathToFileURL(path.resolve(__dirname, '../lib/word/index.js')).href)
+const { createInvoiceFromPayment } = await import(pathToFileURL(path.resolve(__dirname, '../lib/invoice.js')).href)
 
 const router = Router()
 
@@ -58,6 +60,9 @@ router.post('/pdf', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
     res.setHeader('Content-Length', String(buffer.length))
     res.send(buffer)
+    
+    // Reset IP block count on conversion
+    trackConversion(req.userIP).catch(() => {})
 
   } catch (err) {
     console.error(`[Download PDF] Error (${((Date.now() - start) / 1000).toFixed(2)}s):`, err.message)
@@ -106,6 +111,9 @@ router.post('/word', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
     res.setHeader('Content-Length', String(buffer.length))
     res.send(buffer)
+    
+    // Reset IP block count on conversion
+    trackConversion(req.userIP).catch(() => {})
 
   } catch (err) {
     console.error(`[Download Word] Error (${((Date.now() - start) / 1000).toFixed(2)}s):`, err.message)
@@ -135,7 +143,13 @@ router.post('/invoice', async (req, res) => {
     }
 
     // Try to find stored invoice
-    const storedInvoice = await Invoice.findOne({ paymentId })
+    let storedInvoice = await Invoice.findOne({ paymentId })
+
+    // If missing (background task hasn't finished), create it now
+    if (!storedInvoice && payment) {
+      console.log(`[Invoice PDF] Stored invoice missing for ${paymentId}, creating now...`)
+      storedInvoice = await createInvoiceFromPayment(payment)
+    }
 
     const invoiceData = storedInvoice ? {
       customerName: storedInvoice.customerName,
@@ -168,7 +182,9 @@ router.post('/invoice', async (req, res) => {
 
     const pdfElement = await getInvoicePDFComponent(invoiceData)
     const buffer = await renderToBuffer(pdfElement)
-    const filename = `invoice_${payment.paymentId.slice(-6)}_${new Date().toISOString().slice(0,10)}.pdf`
+    // Extract the 6-digit sequential part if available (e.g., from 'RBGGOT 000048')
+    const invNo = invoiceData.invoiceNumber?.match(/\d+/)?.[0] || payment.paymentId.slice(-6);
+    const filename = `invoice_${invNo}.pdf`
 
     const ms = Date.now() - start
     console.log(`[Invoice PDF] payment:${paymentId} | size: ${(buffer.length / 1024).toFixed(1)} KB | time: ${(ms / 1000).toFixed(2)}s | file: ${filename}`)
