@@ -1,0 +1,23 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/fixcvnow/htdocs/www.fixcvnow.com/FixCvNow-Frontend
+            git pull origin main
+            npm install
+            npm run build
+            pm2 reload nextjs-app || pm2 restart nextjs-app
+            pm2 save

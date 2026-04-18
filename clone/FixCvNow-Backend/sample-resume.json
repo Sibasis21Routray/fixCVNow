@@ -1,0 +1,110 @@
+{
+  "name": "Alexandra Johnson",
+  "title": "Senior Product Designer",
+  "headline": "Senior Product Designer",
+  "email": "alex.johnson@email.com",
+  "phone": "+1 (555) 234-5678",
+  "alternatePhone": "+1 (555) 987-6543",
+  "currentAddress": "123 Design Street, San Francisco, CA 94102",
+  "nationality": "American",
+  "dateOfBirth": "15 March 1990",
+  "gender": "Female",
+  "maritalStatus": "Single",
+  "socialLinks": [
+    { "label": "LinkedIn", "url": "linkedin.com/in/alexjohnson" },
+    { "label": "Portfolio", "url": "alexjohnson.design" }
+  ],
+  "summary": "Results-driven Senior Product Designer with 8+ years of experience crafting intuitive digital experiences for high-growth startups and Fortune 500 companies. Proven track record of leading cross-functional teams and delivering products that increase user engagement by up to 40%. Passionate about human-centered design and bridging the gap between business goals and user needs.",
+  "keyHighlights": [
+    "Led redesign of flagship mobile app, increasing DAU by 42% and reducing churn by 28%",
+    "Managed a team of 5 designers across 3 time zones, delivering projects on time and under budget",
+    "Established company-wide design system adopted by 20+ engineers across 4 product teams"
+  ],
+  "experience": [
+    {
+      "company": "TechVision Inc.",
+      "role": "Senior Product Designer",
+      "location": "San Francisco, CA",
+      "start": "Jan 2021",
+      "end": null,
+      "description": [
+        "Led end-to-end product design for a SaaS platform serving 200,000+ enterprise users",
+        "Collaborated with PMs and engineers to ship 12 major features in 18 months",
+        "Conducted 50+ user interviews and synthesized findings into actionable design improvements"
+      ],
+      "achievements": [
+        "Reduced onboarding drop-off rate by 35% through redesigned flow"
+      ]
+    },
+    {
+      "company": "CreativeFlow Agency",
+      "role": "Product Designer",
+      "location": "New York, NY",
+      "start": "Mar 2018",
+      "end": "Dec 2020",
+      "description": [
+        "Designed responsive web and mobile applications for 15+ clients across fintech and healthcare",
+        "Built and maintained a shared component library in Figma used across all client projects"
+      ],
+      "achievements": []
+    },
+    {
+      "company": "StartupHub",
+      "role": "UX Designer",
+      "location": "Remote",
+      "start": "Jun 2016",
+      "end": "Feb 2018",
+      "description": [
+        "Owned UX for consumer mobile app from concept to App Store launch",
+        "Ran weekly design critiques and mentored 2 junior designers"
+      ],
+      "achievements": []
+    }
+  ],
+  "skills": [
+    "Figma", "Sketch", "Adobe XD", "Prototyping",
+    "User Research", "Usability Testing", "Design Systems",
+    "Interaction Design", "Information Architecture", "Wireframing",
+    "HTML/CSS", "Accessibility (WCAG)"
+  ],
+  "education": [
+    {
+      "degree": "Bachelor of Fine Arts",
+      "fieldOfStudy": "Graphic Design",
+      "institution": "Rhode Island School of Design",
+      "endYear": "2014",
+      "grade": "GPA 3.8"
+    }
+  ],
+  "certifications": [
+    {
+      "name": "Google UX Design Certificate",
+      "issuingOrganization": "Google / Coursera",
+      "issueDate": "2022"
+    },
+    {
+      "name": "Certified Usability Analyst (CUA)",
+      "issuingOrganization": "Human Factors International",
+      "issueDate": "2020"
+    }
+  ],
+  "awards": [
+    "Awwwards Site of the Day — CreativeFlow Portfolio Redesign (2020)",
+    "Nielsen Norman Group UX Certification with Distinction (2019)"
+  ],
+  "interests": ["Generative Art", "Hiking", "Photography", "Open Source Design"],
+  "languages": [
+    { "language": "English", "proficiency": "Native" },
+    { "language": "Spanish", "proficiency": "Conversational" },
+    { "language": "French", "proficiency": "Basic" }
+  ],
+  "extraSections": [
+    {
+      "title": "Volunteer Work",
+      "items": [
+        "Design Mentor at ADPList — 200+ mentorship sessions with aspiring designers worldwide",
+        "Pro-bono UX consultant for 3 non-profits through Catchafire"
+      ]
+    }
+  ]
+}
