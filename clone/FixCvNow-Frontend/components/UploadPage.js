@@ -126,8 +126,9 @@ export default function UploadPage() {
             ) : (
               <>
                 <div
-                  className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mb-4"
-                  style={{ color: COLORS.green }}
+className="flex items-center justify-center mb-6 group-hover:text-green-500 transition-colors"                  
+
+style={{ color: COLORS.green }}
                 >
                   <ResumeUploadIcon size={120} />
                 </div>
@@ -135,7 +136,7 @@ export default function UploadPage() {
                   Click to upload your CV
                 </p>
                 <p className="text-xs text-slate-400 mt-4">
-                  PDF, DOC, DOCX, or TXT • Max 10 MB
+                  PDF, DOC, DOCX • Max 2 MB
                 </p>
               </>
             )}
@@ -196,7 +197,7 @@ export default function UploadPage() {
                 <li>• We'll extract your resume content</li>
                 <li>• AI will analyze and improve your CV</li>
                 <li>• You'll preview it in professional templates</li>
-                <li>• Pay ₹9 to unlock the optimized version</li>
+                <li>• Pay and Download Professional Clean OR AI Optimized</li>
               </ul>
             </div>
           </div>
