@@ -246,9 +246,9 @@ router.post('/', async (req, res) => {
 
     const userContent = fileId
       ? [
-          { type: 'input_text', text: userTextContent },
-          { type: 'input_file', file_id: fileId },
-        ]
+        { type: 'input_text', text: userTextContent },
+        { type: 'input_file', file_id: fileId },
+      ]
       : userTextContent
 
     const response = await openai.responses.parse({
@@ -274,12 +274,12 @@ router.post('/', async (req, res) => {
 
     if (isDbConnected()) {
       TokenUsage.create({
-        operation:    'optimize',
-        sessionId:    fileId || null,
-        inputTokens:  u.input_tokens  ?? 0,
+        operation: 'optimize',
+        sessionId: fileId || null,
+        inputTokens: u.input_tokens ?? 0,
         outputTokens: u.output_tokens ?? 0,
-        totalTokens:  u.total_tokens  ?? 0,
-        durationMs:   Math.round((Date.now() - startTime)),
+        totalTokens: u.total_tokens ?? 0,
+        durationMs: Math.round((Date.now() - startTime)),
       }).catch((err) => console.warn('[DB] TokenUsage save failed:', err.message))
     }
 

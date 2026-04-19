@@ -44,7 +44,7 @@ async function uploadAssistantFileFromBuffer(client, buffer, filename, mimeType)
 // Date parser for reverse-chronological sort
 // Handles: "Jan 2022", "3 Jan. 2022", "2022-01", "2022", "Present", "till time"
 // ─────────────────────────────────────────────
-const MONTH_MAP = { jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11 }
+const MONTH_MAP = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 }
 
 function parseResumeDate(str) {
   if (!str) return 0
@@ -253,7 +253,7 @@ async function extractSection(fileRef, schema, schemaName, systemPrompt, userPro
       },
     ],
     text: { format: zodTextFormat(schema, schemaName) },
-    temperature:0,
+    temperature: 0,
   })
   return {
     data: response.output_parsed,
@@ -267,7 +267,7 @@ async function extractSection(fileRef, schema, schemaName, systemPrompt, userPro
 router.post('/', upload.single('file'), async (req, res) => {
   const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress
   const isBlocked = await incrementParseCount(ip)
-  
+
   if (isBlocked) {
     return res.status(403).json({ error: 'Access Denied', message: 'Too many requests without conversion. Try again in 10 hours.' })
   }
@@ -410,14 +410,14 @@ router.post('/', upload.single('file'), async (req, res) => {
 
             // Log per-section usage
             const u = {
-              input_tokens:  usage?.input_tokens  ?? 0,
+              input_tokens: usage?.input_tokens ?? 0,
               output_tokens: usage?.output_tokens ?? 0,
-              total_tokens:  usage?.total_tokens  ?? 0,
+              total_tokens: usage?.total_tokens ?? 0,
               time_ms: ms,
             }
             usageLog[key] = u
             console.log(
-              `[Extract] ✓ ${key.padEnd(12)} | in: ${String(u.input_tokens).padStart(6)} | out: ${String(u.output_tokens).padStart(5)} | total: ${String(u.total_tokens).padStart(6)} | time: ${(ms/1000).toFixed(2)}s`
+              `[Extract] ✓ ${key.padEnd(12)} | in: ${String(u.input_tokens).padStart(6)} | out: ${String(u.output_tokens).padStart(5)} | total: ${String(u.total_tokens).padStart(6)} | time: ${(ms / 1000).toFixed(2)}s`
             )
 
             sendSSE(res, {
@@ -430,7 +430,7 @@ router.post('/', upload.single('file'), async (req, res) => {
           })
           .catch((err) => {
             const ms = Date.now() - sectionStart
-            console.error(`[Extract] ✗ ${key} failed (${(ms/1000).toFixed(2)}s):`, err.message)
+            console.error(`[Extract] ✗ ${key} failed (${(ms / 1000).toFixed(2)}s):`, err.message)
             results[key] = null
             usageLog[key] = { input_tokens: 0, output_tokens: 0, total_tokens: 0, time_ms: ms, error: err.message }
             sendSSE(res, {
@@ -449,9 +449,9 @@ router.post('/', upload.single('file'), async (req, res) => {
     // 3. Log combined token usage + timing
     const totalUsage = Object.values(usageLog).reduce(
       (acc, u) => ({
-        input_tokens:  acc.input_tokens  + (u.input_tokens  || 0),
+        input_tokens: acc.input_tokens + (u.input_tokens || 0),
         output_tokens: acc.output_tokens + (u.output_tokens || 0),
-        total_tokens:  acc.total_tokens  + (u.total_tokens  || 0),
+        total_tokens: acc.total_tokens + (u.total_tokens || 0),
       }),
       { input_tokens: 0, output_tokens: 0, total_tokens: 0 }
     )
@@ -463,12 +463,12 @@ router.post('/', upload.single('file'), async (req, res) => {
         ? ((u.total_tokens / totalUsage.total_tokens) * 100).toFixed(1)
         : '0.0'
       console.log(
-        `  ${section.padEnd(12)} | in: ${String(u.input_tokens).padStart(6)} | out: ${String(u.output_tokens).padStart(5)} | total: ${String(u.total_tokens).padStart(6)} (${pct}%) | ${(u.time_ms/1000).toFixed(2)}s`
+        `  ${section.padEnd(12)} | in: ${String(u.input_tokens).padStart(6)} | out: ${String(u.output_tokens).padStart(5)} | total: ${String(u.total_tokens).padStart(6)} (${pct}%) | ${(u.time_ms / 1000).toFixed(2)}s`
       )
     }
     console.log('─'.repeat(68))
     console.log(
-      `  ${'TOTAL'.padEnd(12)} | in: ${String(totalUsage.input_tokens).padStart(6)} | out: ${String(totalUsage.output_tokens).padStart(5)} | total: ${String(totalUsage.total_tokens).padStart(6)}        | wall: ${(totalMs/1000).toFixed(2)}s`
+      `  ${'TOTAL'.padEnd(12)} | in: ${String(totalUsage.input_tokens).padStart(6)} | out: ${String(totalUsage.output_tokens).padStart(5)} | total: ${String(totalUsage.total_tokens).padStart(6)}        | wall: ${(totalMs / 1000).toFixed(2)}s`
     )
     console.log('─'.repeat(68))
 
@@ -529,7 +529,7 @@ router.post('/', upload.single('file'), async (req, res) => {
 
     // 4. Validate minimum required fields
     if (!resumeData.name || resumeData.name.trim() === '') {
-      await openai.files.delete(fileId).catch(() => {})
+      await openai.files.delete(fileId).catch(() => { })
       clearInterval(heartbeat)
       sendSSE(res, {
         type: 'error',
@@ -540,7 +540,7 @@ router.post('/', upload.single('file'), async (req, res) => {
     }
 
     if (!resumeData.experience || resumeData.experience.length === 0) {
-      await openai.files.delete(fileId).catch(() => {})
+      await openai.files.delete(fileId).catch(() => { })
       clearInterval(heartbeat)
       sendSSE(res, {
         type: 'error',
@@ -564,20 +564,20 @@ router.post('/', upload.single('file'), async (req, res) => {
       Lead.updateOne(
         { sessionId: backendSessionId },
         {
-          $set:         { sessionId: backendSessionId, ...leadData },
+          $set: { sessionId: backendSessionId, ...leadData },
           $setOnInsert: { extractedAt: new Date() },
         },
         { upsert: true },
       ).catch((err) => console.warn('[DB] Lead save failed:', err.message))
 
       TokenUsage.create({
-        operation:    'extract',
-        sessionId:    backendSessionId,
-        inputTokens:  totalUsage.input_tokens,
+        operation: 'extract',
+        sessionId: backendSessionId,
+        inputTokens: totalUsage.input_tokens,
         outputTokens: totalUsage.output_tokens,
-        totalTokens:  totalUsage.total_tokens,
-        sections:     usageLog,
-        durationMs:   totalMs,
+        totalTokens: totalUsage.total_tokens,
+        sections: usageLog,
+        durationMs: totalMs,
       }).catch((err) => console.warn('[DB] TokenUsage save failed:', err.message))
     }
 
@@ -598,7 +598,7 @@ router.post('/', upload.single('file'), async (req, res) => {
 
     // Clean up file if upload succeeded but extraction failed
     if (fileId) {
-      await openai.files.delete(fileId).catch(() => {})
+      await openai.files.delete(fileId).catch(() => { })
     }
 
     sendSSE(res, { type: 'error', error: error.message || 'Internal server error' })
