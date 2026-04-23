@@ -139,6 +139,12 @@ export default function ResumePreview() {
   // Page load
   const [loading, setLoading] = useState(true);
   const [errorType, setErrorType] = useState(null);
+  
+  // Dynamic Pricing
+  const [dynamicPricing, setDynamicPricing] = useState({
+    download: { final: 9, original: 9, hasOffer: false },
+    optimize: { final: 19, original: 19, hasOffer: false }
+  });
 
   const OPTIMIZING_MESSAGES = [
     "Generating your AI Career Upgrade...",
@@ -163,6 +169,16 @@ export default function ResumePreview() {
 
   // ── Restore state from sessionStorage on mount ──
   useEffect(() => {
+    // Fetch dynamic pricing
+    fetch(`${API_URL}/api/payment/pricing`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.download && data.optimize) {
+          setDynamicPricing(data);
+        }
+      })
+      .catch(e => console.error("Failed to load pricing:", e));
+
     if (!sessionId) {
       setErrorType("invalid");
       setLoading(false);
@@ -687,11 +703,17 @@ export default function ResumePreview() {
                       <h3 className="font-bold text-slate-800 text-sm">
                         AI Optimized Resume
                       </h3>
-                      <span
-                        className="text-xs font-bold"
-                        style={{ color: COLORS.green }}
-                      >
-                        ₹19 · One-time AI enhancement
+                      <span className="text-xs font-bold" style={{ color: COLORS.green }}>
+                        ₹{dynamicPricing.optimize.final}
+                        {dynamicPricing.optimize.hasOffer && (
+                          <span className="ml-1 inline-flex items-center gap-1">
+                            <span className="text-[10px] text-slate-400 line-through">{dynamicPricing.optimize.original}</span>
+                            <span className="text-[9px] bg-green-100 text-green-700 px-1 py-0.5 rounded uppercase tracking-wider">
+                              {dynamicPricing.optimize.discount}% Off ends {new Date(dynamicPricing.optimize.expiresAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })}
+                            </span>
+                          </span>
+                        )}
+                        {' '}· One-time AI enhancement
                       </span>
                     </div>
                   </div>
@@ -739,7 +761,7 @@ export default function ResumePreview() {
                       className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
                       style={{ backgroundColor: COLORS.green }}
                     >
-                      Pay ₹19 &amp; Optimize
+                      Pay ₹{dynamicPricing.optimize.final} &amp; Optimize
                     </button>
                   )}
                 </div>
@@ -757,9 +779,20 @@ export default function ResumePreview() {
                     <h3 className="font-bold text-slate-800 text-sm">
                       Download Resume
                     </h3>
-                    <span className="text-xs text-slate-400 font-medium">
-                      ₹9 per download · PDF or Word
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                        ₹{dynamicPricing.download.final} 
+                        {dynamicPricing.download.hasOffer && (
+                          <span className="text-[10px] text-slate-300 line-through ml-1">{dynamicPricing.download.original}</span>
+                        )}
+                        {' '}per download · PDF or Word
+                      </span>
+                      {dynamicPricing.download.hasOffer && (
+                        <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded uppercase tracking-wider w-fit mt-0.5">
+                          {dynamicPricing.download.discount}% Off ends {new Date(dynamicPricing.download.expiresAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -792,7 +825,7 @@ export default function ResumePreview() {
                     <Info size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-blue-700 leading-relaxed">
                       Downloading original resume. Want the AI enhanced version?
-                      Pay <strong>₹19</strong> to optimize first.
+                      Pay <strong>₹{dynamicPricing.optimize.final}</strong> to optimize first.
                     </p>
                   </div>
                 )}
@@ -806,7 +839,7 @@ export default function ResumePreview() {
                       onClick={handleUnlockDownload}
                     >
                       <Lock size={15} />
-                      Pay ₹9 · Unlock Download
+                      Pay ₹{dynamicPricing.download.final} · Unlock Download
                     </button>
                   )}
 

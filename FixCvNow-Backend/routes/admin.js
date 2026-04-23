@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs'
 import { Admin } from '../models/Admin.js'
 import { Lead } from '../models/Lead.js'
 import { TokenUsage } from '../models/TokenUsage.js'
+import { Pricing } from '../models/Pricing.js'
 
 const router = Router()
 
@@ -245,6 +246,51 @@ router.get('/stats', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('[Admin] Stats error:', err.message)
     res.status(500).json({ error: 'Failed to fetch stats' })
+  }
+})
+
+// ============================================================
+// PRICING ROUTES
+// ============================================================
+
+/**
+ * GET /admin/pricing
+ * Get global pricing settings
+ */
+router.get('/pricing', requireAuth, async (req, res) => {
+  try {
+    let pricing = await Pricing.findOne({ configId: 'global' })
+    if (!pricing) {
+      pricing = await Pricing.create({ configId: 'global' })
+    }
+    res.json(pricing)
+  } catch (err) {
+    console.error('[Admin] Get pricing error:', err.message)
+    res.status(500).json({ error: 'Failed to fetch pricing' })
+  }
+})
+
+/**
+ * PUT /admin/pricing
+ * Update global pricing settings
+ */
+router.put('/pricing', requireAuth, async (req, res) => {
+  try {
+    const { download, optimize } = req.body
+    let pricing = await Pricing.findOne({ configId: 'global' })
+    if (!pricing) {
+      pricing = new Pricing({ configId: 'global' })
+    }
+    
+    if (download) pricing.download = { ...pricing.download, ...download }
+    if (optimize) pricing.optimize = { ...pricing.optimize, ...optimize }
+    pricing.updatedAt = new Date()
+    
+    await pricing.save()
+    res.json(pricing)
+  } catch (err) {
+    console.error('[Admin] Update pricing error:', err.message)
+    res.status(500).json({ error: 'Failed to update pricing' })
   }
 })
 

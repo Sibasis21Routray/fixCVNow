@@ -14,12 +14,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 function useAdminFetch() {
   const router = useRouter()
 
-  const apiFetch = useCallback(async (path) => {
+  const apiFetch = useCallback(async (path, options = {}) => {
     const token = localStorage.getItem('admin_token')
     if (!token) { router.replace('/admin/login'); return null }
 
     const res = await fetch(`${API_URL}${path}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      ...options,
+      headers: { Authorization: `Bearer ${token}`, ...options?.headers },
     })
     if (res.status === 401) { router.replace('/admin/login'); return null }
     return res.json()
@@ -292,6 +293,144 @@ function LeadsTable({ apiFetch }) {
   )
 }
 
+// ── Pricing Section ────────────────────────────────────
+function PricingSection({ apiFetch }) {
+  const [pricing, setPricing] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    const res = await apiFetch('/admin/pricing')
+    if (res) setPricing(res)
+    setLoading(false)
+  }, [apiFetch])
+
+  useEffect(() => { load() }, [load])
+
+  const handleSave = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    const payload = {
+      download: {
+        ...pricing.download,
+        offerDuration: pricing.download.offerDuration ? new Date(pricing.download.offerDuration).toISOString() : null
+      },
+      optimize: {
+        ...pricing.optimize,
+        offerDuration: pricing.optimize.offerDuration ? new Date(pricing.optimize.offerDuration).toISOString() : null
+      }
+    }
+    const res = await apiFetch('/admin/pricing', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    if (res && res._id) {
+      alert('Pricing updated successfully!')
+      setPricing(res)
+    } else {
+      alert('Failed to update pricing.')
+    }
+    setSaving(false)
+  }
+
+  if (loading || !pricing) return <div className="py-8 text-center text-slate-400">Loading pricing...</div>
+
+  const handleChange = (section, field, value) => {
+    setPricing(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value
+      }
+    }))
+  }
+
+  // Format date for datetime-local input safely
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return ''
+    try {
+      const d = new Date(dateString)
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+      return d.toISOString().slice(0, 16)
+    } catch {
+      return ''
+    }
+  }
+
+  return (
+    <form onSubmit={handleSave} className="space-y-6">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="font-bold text-slate-800">Pricing & Offers Configuration</h2>
+        <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+          {saving ? 'Saving...' : 'Save Changes'}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Download Section */}
+        <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
+          <h3 className="font-semibold text-slate-700 mb-4 flex items-center gap-2">
+            <DocumentIcon size={18} /> Download Pricing
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Base Price ($)</label>
+              <input type="number" step="0.01" min="0" value={pricing.download.price} onChange={e => handleChange('download', 'price', Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
+            </div>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="flex justify-between items-center text-xs font-medium text-slate-500 mb-1">
+                  <span>Offer Discount (%)</span>
+                  <button type="button" onClick={() => handleChange('download', 'offerDiscount', 0)} className="text-blue-500 hover:text-blue-600 font-semibold underline text-[10px]">Clear</button>
+                </label>
+                <input type="number" step="1" min="0" max="100" value={pricing.download.offerDiscount} onChange={e => handleChange('download', 'offerDiscount', Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
+              </div>
+              <div className="flex-1">
+                <label className="flex justify-between items-center text-xs font-medium text-slate-500 mb-1">
+                  <span>Offer Valid Until</span>
+                  <button type="button" onClick={() => handleChange('download', 'offerDuration', null)} className="text-blue-500 hover:text-blue-600 font-semibold underline text-[10px]">Clear</button>
+                </label>
+                <input type="datetime-local" value={formatDateForInput(pricing.download.offerDuration)} onChange={e => handleChange('download', 'offerDuration', e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Optimize Section */}
+        <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
+          <h3 className="font-semibold text-slate-700 mb-4 flex items-center gap-2">
+            <ResumeOptimizeIcon size={18} /> AI Enhance Pricing
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Base Price ($)</label>
+              <input type="number" step="0.01" min="0" value={pricing.optimize.price} onChange={e => handleChange('optimize', 'price', Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
+            </div>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="flex justify-between items-center text-xs font-medium text-slate-500 mb-1">
+                  <span>Offer Discount (%)</span>
+                  <button type="button" onClick={() => handleChange('optimize', 'offerDiscount', 0)} className="text-blue-500 hover:text-blue-600 font-semibold underline text-[10px]">Clear</button>
+                </label>
+                <input type="number" step="1" min="0" max="100" value={pricing.optimize.offerDiscount} onChange={e => handleChange('optimize', 'offerDiscount', Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
+              </div>
+              <div className="flex-1">
+                <label className="flex justify-between items-center text-xs font-medium text-slate-500 mb-1">
+                  <span>Offer Valid Until</span>
+                  <button type="button" onClick={() => handleChange('optimize', 'offerDuration', null)} className="text-blue-500 hover:text-blue-600 font-semibold underline text-[10px]">Clear</button>
+                </label>
+                <input type="datetime-local" value={formatDateForInput(pricing.optimize.offerDuration)} onChange={e => handleChange('optimize', 'offerDuration', e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  )
+}
+
 // ── Main Dashboard ─────────────────────────────────────
 export default function AdminDashboard() {
   const router = useRouter()
@@ -386,6 +525,11 @@ export default function AdminDashboard() {
             &nbsp;·&nbsp; input {extractStats.inputTokens.toLocaleString()} &nbsp;·&nbsp; output {extractStats.outputTokens.toLocaleString()}
           </div>
         )}
+
+        {/* Pricing Section */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <PricingSection apiFetch={apiFetch} />
+        </div>
 
         {/* Leads table */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">

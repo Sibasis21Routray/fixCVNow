@@ -1,6 +1,7 @@
 // this is components/LandingPage.js
 'use client'
 
+import { useState, useEffect } from 'react'
 import { CheckCircle, ArrowRight, AlertCircle, ChevronRight, Dot } from 'lucide-react'
 import { ResumeUploadIcon, AiBrainIcon, DocumentPreviewIcon, SecureDownloadIcon, QuickTemplatesIcon } from '@/components/asset-icons'
 import { COLORS } from '@/lib/colors'
@@ -10,6 +11,21 @@ import BeforeAfter from '@/components/BeforeAfter'
 
 export default function LandingPage() {
   const router = useRouter()
+  const [dynamicPricing, setDynamicPricing] = useState({
+    download: { final: 9, original: 9, hasOffer: false },
+    optimize: { final: 19, original: 19, hasOffer: false }
+  })
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/payment/pricing`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.download && data.optimize) {
+          setDynamicPricing(data)
+        }
+      })
+      .catch(e => console.error("Failed to load pricing:", e))
+  }, [])
 
   const handleStart = () => {
     router.push('/?page=upload')
@@ -183,8 +199,13 @@ export default function LandingPage() {
       </div>
 
       <div className="flex items-end gap-2 mb-1">
-        <span className="text-4xl font-black" style={{ color: COLORS.blue }}>₹9</span>
-        <span className="text-lg text-slate-400 line-through font-bold mb-1">₹49</span>
+        <span className="text-4xl font-black" style={{ color: COLORS.blue }}>₹{dynamicPricing.download.final}</span>
+        {dynamicPricing.download.hasOffer && (
+          <div className="flex flex-col mb-1.5">
+            <span className="text-sm text-slate-400 line-through font-bold">₹{dynamicPricing.download.original}</span>
+            <span className="text-[10px] font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded uppercase tracking-wider">{dynamicPricing.download.discount}% Off ends {new Date(dynamicPricing.download.expiresAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })}</span>
+          </div>
+        )}
       </div>
       <p className="text-sm text-slate-500 mb-6 font-medium">Clean. Correct. Ready for job applications.</p>
 
@@ -213,7 +234,7 @@ export default function LandingPage() {
         className="w-full py-3.5 text-white font-bold rounded-2xl transition-all hover:opacity-90"
         style={{ backgroundColor: COLORS.blue }}
       >
-        Download Professional CV — ₹9
+        Download Professional CV — ₹{dynamicPricing.download.final}
       </button>
       <p className="mt-3 text-sm text-center text-slate-400 font-bold">One Time Payment</p>
     </div>
@@ -230,8 +251,13 @@ export default function LandingPage() {
       </div>
 
       <div className="flex items-end gap-2 mb-1">
-        <span className="text-4xl font-black" style={{ color: COLORS.blue }}>₹19</span>
-        <span className="text-lg text-slate-400 line-through font-bold mb-1">₹99</span>
+        <span className="text-4xl font-black" style={{ color: COLORS.blue }}>₹{dynamicPricing.optimize.final}</span>
+        {dynamicPricing.optimize.hasOffer && (
+          <div className="flex flex-col mb-1.5">
+            <span className="text-sm text-slate-400 line-through font-bold">₹{dynamicPricing.optimize.original}</span>
+            <span className="text-[10px] font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded uppercase tracking-wider">{dynamicPricing.optimize.discount}% Off ends {new Date(dynamicPricing.optimize.expiresAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })}</span>
+          </div>
+        )}
       </div>
       <p className="text-sm text-slate-500 mb-6 font-medium">Stronger positioning. Better impact. Higher confidence.</p>
 
@@ -260,7 +286,7 @@ export default function LandingPage() {
         className="w-full py-3.5 text-white font-bold rounded-2xl transition-all hover:opacity-90"
         style={{ backgroundColor: COLORS.green }}
       >
-        Download AI Career Upgrade — ₹19
+        Download AI Career Upgrade — ₹{dynamicPricing.optimize.final}
       </button>
       <p className="mt-3 text-sm text-center text-slate-400 font-bold">One Time Payment</p>
     </div>

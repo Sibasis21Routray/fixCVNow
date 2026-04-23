@@ -4,6 +4,7 @@ import { Router } from 'express'
 import Razorpay from 'razorpay'
 import crypto from 'crypto'
 import { Payment } from '../models/Payment.js'
+import { Pricing } from '../models/Pricing.js'
 import { createInvoiceFromPayment } from '../lib/invoice.js'
 import { trackConversion } from '../lib/middleware/ipBlock.js'
 
@@ -24,6 +25,40 @@ function getRazorpay() {
   })
 }
 
+// ── GET /api/payment/pricing ──────────────────────────────
+// Returns the currently active dynamic prices (after discount config)
+router.get('/pricing', async (req, res) => {
+  try {
+    const pricing = await Pricing.findOne({ configId: 'global' })
+    const result = { 
+      download: { original: 9, final: 9, hasOffer: false }, 
+      optimize: { original: 19, final: 19, hasOffer: false } 
+    }
+    
+    if (pricing) {
+      for (const key of ['download', 'optimize']) {
+        if (pricing[key]) {
+          let original = pricing[key].price || (key === 'download' ? 9 : 19)
+          let final = original
+          let hasOffer = false
+          let expiresAt = null
+          if (pricing[key].offerDiscount > 0 && pricing[key].offerDuration && new Date(pricing[key].offerDuration) > new Date()) {
+            final = Math.round(original * (1 - pricing[key].offerDiscount / 100))
+            hasOffer = true
+            expiresAt = pricing[key].offerDuration
+          }
+          result[key] = { original, final, hasOffer, discount: pricing[key].offerDiscount, expiresAt }
+        }
+      }
+    }
+    
+    res.json(result)
+  } catch (err) {
+    console.error('[Payment] pricing fetch error:', err.message)
+    res.status(500).json({ error: 'Failed to fetch pricing' })
+  }
+})
+
 // ── POST /api/payment/create-order ──────────────────────────────
 // Called by frontend before opening Razorpay modal.
 // Creates a Razorpay order and saves it in DB.
@@ -31,11 +66,39 @@ router.post('/create-order', async (req, res) => {
   try {
     const { sessionId, purpose, templateId, customerName, email, phone } = req.body
 
-    if (!sessionId || !purpose || !PRICES[purpose]) {
+    if (!sessionId || !purpose) {
       return res.status(400).json({ error: 'Invalid request: missing sessionId or purpose' })
     }
 
-    const amount = PRICES[purpose]
+    let normalizedPurpose = purpose
+    if (purpose === 'download_pdf' || purpose === 'download_word') {
+       normalizedPurpose = 'download'
+    }
+
+    if (normalizedPurpose !== 'download' && normalizedPurpose !== 'optimize') {
+      return res.status(400).json({ error: 'Invalid purpose' })
+    }
+
+    // Fetch dynamic pricing
+    let pricing = await Pricing.findOne({ configId: 'global' })
+    let amount = 900 // Fallback
+    
+    if (pricing && pricing[normalizedPurpose]) {
+      const config = pricing[normalizedPurpose]
+      let currentPrice = config.price
+      
+      // Check if there is an active offer
+      if (config.offerDiscount > 0 && config.offerDuration && new Date(config.offerDuration) > new Date()) {
+         currentPrice = currentPrice * (1 - config.offerDiscount / 100)
+      }
+      
+      amount = Math.round(currentPrice * 100) // Convert to paise
+    } else {
+       // use old fallback logic
+       const FALLBACK_PRICES = { download: 900, optimize: 1900 }
+       amount = FALLBACK_PRICES[normalizedPurpose]
+    }
+
     const razorpay = getRazorpay()
 
     const order = await razorpay.orders.create({
