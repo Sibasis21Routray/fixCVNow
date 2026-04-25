@@ -12,8 +12,8 @@ import BeforeAfter from '@/components/BeforeAfter'
 export default function LandingPage() {
   const router = useRouter()
   const [dynamicPricing, setDynamicPricing] = useState({
-    download: { final: 9, original: 9, hasOffer: false },
-    optimize: { final: 19, original: 19, hasOffer: false }
+    download: { final: 99, original: 124, hasOffer: true, discount: 20, expiresAt: new Date(Date.now() + 86400000).toISOString() },
+    optimize: { final: 19, original: 24, hasOffer: true, discount: 20, expiresAt: new Date(Date.now() + 86400000).toISOString() }
   })
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function LandingPage() {
             <span className="">Get Hired Faster.</span>
           </h1>
           <p className="text-lg mb-8 max-w-lg mx-auto lg:mx-0 leading-relaxed">
-            AI fixes grammar, structure, and formatting to make your resume recruiter-ready and ATS-friendly.
+            Upload your CV and see the improvement instantly — before you decide to download.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
             <button
@@ -199,10 +199,10 @@ export default function LandingPage() {
       </div>
 
       <div className="flex items-end gap-2 mb-1">
-        <span className="text-4xl font-black" style={{ color: COLORS.blue }}>₹{dynamicPricing.download.final}</span>
+        <span className="text-4xl font-black" style={{ color: COLORS.blue }}>₹{dynamicPricing.download.final.toFixed(2)}</span>
         {dynamicPricing.download.hasOffer && (
           <div className="flex flex-col mb-1.5">
-            <span className="text-sm text-slate-400 line-through font-bold">₹{dynamicPricing.download.original}</span>
+            <span className="text-sm text-slate-400 line-through font-bold">₹{dynamicPricing.download.original.toFixed(2)}</span>
             <span className="text-[10px] font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded uppercase tracking-wider">{dynamicPricing.download.discount}% Off ends {new Date(dynamicPricing.download.expiresAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })}</span>
           </div>
         )}
@@ -231,10 +231,13 @@ export default function LandingPage() {
 
       <button
         onClick={handleStart}
-        className="w-full py-3.5 text-white font-bold rounded-2xl transition-all hover:opacity-90"
+        className="w-full py-3.5 text-white font-bold rounded-2xl transition-all hover:opacity-90 flex items-center justify-center gap-2"
         style={{ backgroundColor: COLORS.blue }}
       >
-        Download Professional CV — ₹{dynamicPricing.download.final}
+        <span>Download Professional CV — ₹{dynamicPricing.download.final.toFixed(2)}</span>
+        {dynamicPricing.download.hasOffer && (
+           <span className="text-sm line-through opacity-60">₹{dynamicPricing.download.original.toFixed(2)}</span>
+        )}
       </button>
       <p className="mt-3 text-sm text-center text-slate-400 font-bold">One Time Payment</p>
     </div>
@@ -251,10 +254,10 @@ export default function LandingPage() {
       </div>
 
       <div className="flex items-end gap-2 mb-1">
-        <span className="text-4xl font-black" style={{ color: COLORS.blue }}>₹{dynamicPricing.optimize.final}</span>
+        <span className="text-4xl font-black" style={{ color: COLORS.blue }}>₹{dynamicPricing.optimize.final.toFixed(2)}</span>
         {dynamicPricing.optimize.hasOffer && (
           <div className="flex flex-col mb-1.5">
-            <span className="text-sm text-slate-400 line-through font-bold">₹{dynamicPricing.optimize.original}</span>
+            <span className="text-sm text-slate-400 line-through font-bold">₹{dynamicPricing.optimize.original.toFixed(2)}</span>
             <span className="text-[10px] font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded uppercase tracking-wider">{dynamicPricing.optimize.discount}% Off ends {new Date(dynamicPricing.optimize.expiresAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })}</span>
           </div>
         )}
@@ -283,10 +286,13 @@ export default function LandingPage() {
 
       <button
         onClick={handleStart}
-        className="w-full py-3.5 text-white font-bold rounded-2xl transition-all hover:opacity-90"
+        className="w-full py-3.5 text-white font-bold rounded-2xl transition-all hover:opacity-90 flex items-center justify-center gap-2"
         style={{ backgroundColor: COLORS.green }}
       >
-        Download AI Career Upgrade — ₹{dynamicPricing.optimize.final}
+        <span>Download AI Career Upgrade — ₹{dynamicPricing.optimize.final.toFixed(2)}</span>
+        {dynamicPricing.optimize.hasOffer && (
+           <span className="text-sm line-through opacity-60">₹{dynamicPricing.optimize.original.toFixed(2)}</span>
+        )}
       </button>
       <p className="mt-3 text-sm text-center text-slate-400 font-bold">One Time Payment</p>
     </div>

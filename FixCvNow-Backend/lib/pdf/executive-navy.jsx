@@ -8,7 +8,7 @@ import { TEMPLATE } from '../theme'
 
 const T = TEMPLATE['executive-navy']
 const SZ = T.sizePdf
-const C  = T.color
+const C = T.color
 
 const styles = StyleSheet.create({
   page: {
@@ -91,11 +91,10 @@ const styles = StyleSheet.create({
     gap: 5,
     marginBottom: 3,
   },
-  skillDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: C.accent,
+  skillBullet: {
+    fontSize: SZ.body - 2,
+    color: C.accent,
+    marginRight: 4,
   },
   skillText: {
     fontSize: SZ.body,
@@ -107,12 +106,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 5,
   },
-  eduDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: C.accent,
-    marginTop: 3,
+  eduBullet: {
+    fontSize: SZ.body - 4,
+    color: C.accent,
+    marginTop: 2,
+    marginRight: 4,
     flexShrink: 0,
   },
   eduContent: {
@@ -291,7 +289,7 @@ export function ExecutiveNavyPDF({ data }) {
                 <Text style={styles.sectionTitle}>Core Competencies</Text>
                 {coreSkills.slice(0, 12).map((skill, idx) => (
                   <View key={idx} style={styles.skillRow}>
-                    <View style={styles.skillDot} />
+                    <Text style={styles.skillBullet}>•</Text>
                     <Text style={styles.skillText}>{skill}</Text>
                   </View>
                 ))}
@@ -303,7 +301,7 @@ export function ExecutiveNavyPDF({ data }) {
                 <Text style={styles.sectionTitle}>Education</Text>
                 {data.education.map((edu, idx) => (
                   <View key={idx} style={styles.eduBlock}>
-                    <View style={styles.eduDot} />
+                    <Text style={styles.eduBullet}>•</Text>
                     <View style={styles.eduContent}>
                       <Text style={styles.eduDegree}>{edu.degree}</Text>
                       {(edu.fieldOfStudy || edu.field) && <Text style={styles.eduField}>{edu.fieldOfStudy || edu.field}</Text>}
@@ -321,7 +319,7 @@ export function ExecutiveNavyPDF({ data }) {
                 <Text style={styles.sectionTitle}>Languages</Text>
                 {data.languages.map((lang, idx) => (
                   <View key={idx} style={styles.skillRow}>
-                    <View style={styles.skillDot} />
+                    <Text style={styles.skillBullet}>•</Text>
                     <Text style={styles.skillText}>{getLangText(lang)}</Text>
                   </View>
                 ))}
@@ -333,7 +331,7 @@ export function ExecutiveNavyPDF({ data }) {
                 <Text style={styles.sectionTitle}>Certifications</Text>
                 {data.certifications.map((cert, idx) => (
                   <View key={idx} style={styles.certBlock}>
-                    <View style={styles.eduDot} />
+                    <Text style={styles.eduBullet}>•</Text>
                     <View style={styles.certContent}>
                       <Text style={styles.certName}>{cert.name}</Text>
                       {(cert.issuingOrganization || cert.issuer || cert.issueDate || cert.year) && (
@@ -352,7 +350,7 @@ export function ExecutiveNavyPDF({ data }) {
                 <Text style={styles.sectionTitle}>Awards & Recognition</Text>
                 {data.awards.map((award, idx) => (
                   <View key={idx} style={styles.skillRow}>
-                    <View style={styles.skillDot} />
+                    <Text style={styles.skillBullet}>•</Text>
                     <Text style={styles.skillText}>{getAwardText(award)}</Text>
                   </View>
                 ))}
@@ -433,7 +431,7 @@ export function ExecutiveNavyPDF({ data }) {
                 <Text style={styles.sectionTitle}>Awards & Recognition</Text>
                 {data.awards.map((award, idx) => (
                   <View key={idx} style={styles.skillRow}>
-                    <View style={styles.skillDot} />
+                    <Text style={styles.skillBullet}>•</Text>
                     <Text style={styles.skillText}>{getAwardText(award)}</Text>
                   </View>
                 ))}
@@ -445,7 +443,7 @@ export function ExecutiveNavyPDF({ data }) {
                 <Text style={styles.sectionTitle}>Languages</Text>
                 {data.languages.map((lang, idx) => (
                   <View key={idx} style={styles.skillRow}>
-                    <View style={styles.skillDot} />
+                    <Text style={styles.skillBullet}>•</Text>
                     <Text style={styles.skillText}>{getLangText(lang)}</Text>
                   </View>
                 ))}
@@ -457,7 +455,7 @@ export function ExecutiveNavyPDF({ data }) {
                 <Text style={styles.sectionTitle}>Certifications</Text>
                 {data.certifications.map((cert, idx) => (
                   <View key={idx} style={styles.certBlock}>
-                    <View style={styles.eduDot} />
+                    <Text style={styles.eduBullet}>•</Text>
                     <View style={styles.certContent}>
                       <Text style={styles.certName}>{cert.name}</Text>
                       {(cert.issuingOrganization || cert.issuer || cert.issueDate || cert.year) && (
@@ -476,7 +474,7 @@ export function ExecutiveNavyPDF({ data }) {
                 <Text style={styles.sectionTitle}>Interests & Hobbies</Text>
                 {data.interests.map((item, idx) => (
                   <View key={idx} style={styles.skillRow}>
-                    <View style={styles.skillDot} />
+                    <Text style={styles.skillBullet}>•</Text>
                     <Text style={styles.skillText}>{item}</Text>
                   </View>
                 ))}
@@ -489,7 +487,7 @@ export function ExecutiveNavyPDF({ data }) {
                   <Text style={styles.sectionTitle}>{section.title}</Text>
                   {section.items.map((item, iIdx) => (
                     <View key={iIdx} style={styles.skillRow}>
-                      <View style={styles.skillDot} />
+                      <Text style={styles.skillBullet}>•</Text>
                       <Text style={styles.skillText}>{item}</Text>
                     </View>
                   ))}

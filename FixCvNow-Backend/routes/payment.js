@@ -12,10 +12,8 @@ const router = Router()
 
 // Price map in paise (1 INR = 100 paise)
 const PRICES = {
-  download: 900,   // ₹9 — unlocks both PDF and Word (user picks one)
-  download_pdf: 900,   // ₹9 (legacy, kept for backwards compat)
-  download_word: 900,   // ₹9 (legacy, kept for backwards compat)
-  optimize: 1900,  // ₹19
+  download: 9900,   // ₹99 — Original Resume Download
+  optimize: 1900,  // ₹19 — AI Optimized Resume Download
 }
 
 function getRazorpay() {
@@ -25,39 +23,36 @@ function getRazorpay() {
   })
 }
 
-// ── GET /api/payment/pricing ──────────────────────────────
-// Returns the currently active dynamic prices (after discount config)
 router.get('/pricing', async (req, res) => {
+  const result = { 
+    download: { original: 124, final: 99, hasOffer: true, discount: 20, expiresAt: new Date(Date.now() + 86400000).toISOString() }, 
+    optimize: { original: 24, final: 19, hasOffer: true, discount: 20, expiresAt: new Date(Date.now() + 86400000).toISOString() } 
+  };
+  
   try {
-    const pricing = await Pricing.findOne({ configId: 'global' })
-    const result = { 
-      download: { original: 9, final: 9, hasOffer: false }, 
-      optimize: { original: 19, final: 19, hasOffer: false } 
-    }
-    
+    const pricing = await Pricing.findOne({ configId: 'global' });
     if (pricing) {
       for (const key of ['download', 'optimize']) {
         if (pricing[key]) {
-          let original = pricing[key].price || (key === 'download' ? 9 : 19)
-          let final = original
-          let hasOffer = false
-          let expiresAt = null
+          let original = pricing[key].price || (key === 'download' ? 99 : 19);
+          let final = original;
+          let hasOffer = false;
+          let expiresAt = null;
           if (pricing[key].offerDiscount > 0 && pricing[key].offerDuration && new Date(pricing[key].offerDuration) > new Date()) {
-            final = Math.round(original * (1 - pricing[key].offerDiscount / 100))
-            hasOffer = true
-            expiresAt = pricing[key].offerDuration
+            final = Number((original * (1 - pricing[key].offerDiscount / 100)).toFixed(2));
+            hasOffer = true;
+            expiresAt = pricing[key].offerDuration;
           }
-          result[key] = { original, final, hasOffer, discount: pricing[key].offerDiscount, expiresAt }
+          result[key] = { original, final, hasOffer, discount: pricing[key].offerDiscount, expiresAt };
         }
       }
     }
-    
-    res.json(result)
   } catch (err) {
-    console.error('[Payment] pricing fetch error:', err.message)
-    res.status(500).json({ error: 'Failed to fetch pricing' })
+    console.warn('[Payment] Could not fetch dynamic pricing from DB, using fallbacks:', err.message);
   }
-})
+  
+  res.json(result);
+});
 
 // ── POST /api/payment/create-order ──────────────────────────────
 // Called by frontend before opening Razorpay modal.
@@ -80,23 +75,22 @@ router.post('/create-order', async (req, res) => {
     }
 
     // Fetch dynamic pricing
-    let pricing = await Pricing.findOne({ configId: 'global' })
-    let amount = 900 // Fallback
-    
-    if (pricing && pricing[normalizedPurpose]) {
-      const config = pricing[normalizedPurpose]
-      let currentPrice = config.price
-      
-      // Check if there is an active offer
-      if (config.offerDiscount > 0 && config.offerDuration && new Date(config.offerDuration) > new Date()) {
-         currentPrice = currentPrice * (1 - config.offerDiscount / 100)
+    let amount = (normalizedPurpose === 'optimize') ? 1900 : 9900; // Default fallbacks (paise)
+    try {
+      const pricing = await Pricing.findOne({ configId: 'global' });
+      if (pricing && pricing[normalizedPurpose]) {
+        const config = pricing[normalizedPurpose];
+        let currentPrice = config.price;
+        
+        // Check if there is an active offer
+        if (config.offerDiscount > 0 && config.offerDuration && new Date(config.offerDuration) > new Date()) {
+           currentPrice = currentPrice * (1 - config.offerDiscount / 100);
+        }
+        
+        amount = Math.round(currentPrice * 100); // Convert to paise
       }
-      
-      amount = Math.round(currentPrice * 100) // Convert to paise
-    } else {
-       // use old fallback logic
-       const FALLBACK_PRICES = { download: 900, optimize: 1900 }
-       amount = FALLBACK_PRICES[normalizedPurpose]
+    } catch (err) {
+      console.warn('[Payment] DB error in create-order, using fallbacks:', err.message);
     }
 
     const razorpay = getRazorpay()

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { COLORS } from '@/lib/colors'
 import {
   Users, TrendingUp, LogOut, Search,
-  ChevronLeft, ChevronRight, RefreshCw
+  ChevronLeft, ChevronRight, RefreshCw, Settings, X
 } from 'lucide-react'
 import { DocumentIcon, ResumeOptimizeIcon, QuickTemplatesIcon } from '@/components/asset-icons'
 
@@ -293,18 +293,19 @@ function LeadsTable({ apiFetch }) {
   )
 }
 
-// ── Pricing Section ────────────────────────────────────
-function PricingSection({ apiFetch }) {
+// ── Pricing Section (Modal) ──────────────────────────
+function PricingModal({ isOpen, onClose, apiFetch }) {
   const [pricing, setPricing] = useState(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const load = useCallback(async () => {
+    if (!isOpen) return
     setLoading(true)
     const res = await apiFetch('/admin/pricing')
     if (res) setPricing(res)
     setLoading(false)
-  }, [apiFetch])
+  }, [apiFetch, isOpen])
 
   useEffect(() => { load() }, [load])
 
@@ -314,10 +315,14 @@ function PricingSection({ apiFetch }) {
     const payload = {
       download: {
         ...pricing.download,
+        price: Number(pricing.download.price) || 0,
+        offerDiscount: Number(pricing.download.offerDiscount) || 0,
         offerDuration: pricing.download.offerDuration ? new Date(pricing.download.offerDuration).toISOString() : null
       },
       optimize: {
         ...pricing.optimize,
+        price: Number(pricing.optimize.price) || 0,
+        offerDiscount: Number(pricing.optimize.offerDiscount) || 0,
         offerDuration: pricing.optimize.offerDuration ? new Date(pricing.optimize.offerDuration).toISOString() : null
       }
     }
@@ -329,13 +334,14 @@ function PricingSection({ apiFetch }) {
     if (res && res._id) {
       alert('Pricing updated successfully!')
       setPricing(res)
+      onClose()
     } else {
       alert('Failed to update pricing.')
     }
     setSaving(false)
   }
 
-  if (loading || !pricing) return <div className="py-8 text-center text-slate-400">Loading pricing...</div>
+  if (!isOpen) return null
 
   const handleChange = (section, field, value) => {
     setPricing(prev => ({
@@ -347,7 +353,6 @@ function PricingSection({ apiFetch }) {
     }))
   }
 
-  // Format date for datetime-local input safely
   const formatDateForInput = (dateString) => {
     if (!dateString) return ''
     try {
@@ -360,74 +365,114 @@ function PricingSection({ apiFetch }) {
   }
 
   return (
-    <form onSubmit={handleSave} className="space-y-6">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="font-bold text-slate-800">Pricing & Offers Configuration</h2>
-        <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
-          {saving ? 'Saving...' : 'Save Changes'}
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Download Section */}
-        <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
-          <h3 className="font-semibold text-slate-700 mb-4 flex items-center gap-2">
-            <DocumentIcon size={18} /> Download Pricing
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Base Price ($)</label>
-              <input type="number" step="0.01" min="0" value={pricing.download.price} onChange={e => handleChange('download', 'price', Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6">
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
+      
+      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+        <header className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+              <Settings size={18} />
             </div>
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="flex justify-between items-center text-xs font-medium text-slate-500 mb-1">
-                  <span>Offer Discount (%)</span>
-                  <button type="button" onClick={() => handleChange('download', 'offerDiscount', 0)} className="text-blue-500 hover:text-blue-600 font-semibold underline text-[10px]">Clear</button>
-                </label>
-                <input type="number" step="1" min="0" max="100" value={pricing.download.offerDiscount} onChange={e => handleChange('download', 'offerDiscount', Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
-              </div>
-              <div className="flex-1">
-                <label className="flex justify-between items-center text-xs font-medium text-slate-500 mb-1">
-                  <span>Offer Valid Until</span>
-                  <button type="button" onClick={() => handleChange('download', 'offerDuration', null)} className="text-blue-500 hover:text-blue-600 font-semibold underline text-[10px]">Clear</button>
-                </label>
-                <input type="datetime-local" value={formatDateForInput(pricing.download.offerDuration)} onChange={e => handleChange('download', 'offerDuration', e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
-              </div>
-            </div>
+            <h2 className="font-bold text-slate-800 text-lg">Pricing & Offers Configuration</h2>
           </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+            <X size={20} />
+          </button>
+        </header>
+
+        <div className="p-6 overflow-y-auto">
+          {loading || !pricing ? (
+            <div className="py-20 text-center flex flex-col items-center gap-3">
+              <RefreshCw className="animate-spin text-blue-500" size={30} />
+              <p className="text-slate-400 font-medium">Fetching active policies...</p>
+            </div>
+          ) : (
+            <form id="pricing-form" onSubmit={handleSave} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Download Section */}
+                <div className="bg-slate-50/50 rounded-2xl p-5 border border-slate-100 space-y-4">
+                  <h3 className="font-bold text-slate-700 flex items-center gap-2 text-sm uppercase tracking-wider">
+                    <DocumentIcon size={18} /> Original Resume
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5 ml-1">Base Price (₹)</label>
+                      <input type="number" step="0.01" min="0" value={pricing.download.price} onChange={e => handleChange('download', 'price', e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-medium" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="flex justify-between items-center text-xs font-semibold text-slate-400 mb-1.5 ml-1">
+                          <span>Discount (%)</span>
+                          <button type="button" onClick={() => handleChange('download', 'offerDiscount', 0)} className="text-blue-500 hover:underline text-[10px]">Clear</button>
+                        </label>
+                        <input type="number" step="1" min="0" max="100" value={pricing.download.offerDiscount} onChange={e => handleChange('download', 'offerDiscount', e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-medium" />
+                      </div>
+                      <div>
+                        <label className="flex justify-between items-center text-xs font-semibold text-slate-400 mb-1.5 ml-1">
+                          <span>Expiry</span>
+                          <button type="button" onClick={() => handleChange('download', 'offerDuration', null)} className="text-blue-500 hover:underline text-[10px]">Reset</button>
+                        </label>
+                        <input type="datetime-local" value={formatDateForInput(pricing.download.offerDuration)} onChange={e => handleChange('download', 'offerDuration', e.target.value)} className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none transition-all font-medium ${new Date(pricing.download.offerDuration) < new Date() ? 'border-red-200 bg-red-50 text-red-600' : 'border-slate-200'}`} />
+                      </div>
+                    </div>
+                    {pricing.download.offerDuration && new Date(pricing.download.offerDuration) < new Date() && (
+                      <p className="text-[11px] text-red-500 font-bold bg-red-50 px-3 py-2 rounded-lg border border-red-100 italic">⚠️ This offer has expired and is no longer visible to users.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Optimize Section */}
+                <div className="bg-slate-50/50 rounded-2xl p-5 border border-slate-100 space-y-4">
+                  <h3 className="font-bold text-slate-700 flex items-center gap-2 text-sm uppercase tracking-wider">
+                    <ResumeOptimizeIcon size={18} /> AI Optimized
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5 ml-1">Base Price (₹)</label>
+                      <input type="number" step="0.01" min="0" value={pricing.optimize.price} onChange={e => handleChange('optimize', 'price', e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-medium" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="flex justify-between items-center text-xs font-semibold text-slate-400 mb-1.5 ml-1">
+                          <span>Discount (%)</span>
+                          <button type="button" onClick={() => handleChange('optimize', 'offerDiscount', 0)} className="text-blue-500 hover:underline text-[10px]">Clear</button>
+                        </label>
+                        <input type="number" step="1" min="0" max="100" value={pricing.optimize.offerDiscount} onChange={e => handleChange('optimize', 'offerDiscount', e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-medium" />
+                      </div>
+                      <div>
+                        <label className="flex justify-between items-center text-xs font-semibold text-slate-400 mb-1.5 ml-1">
+                          <span>Expiry</span>
+                          <button type="button" onClick={() => handleChange('optimize', 'offerDuration', null)} className="text-blue-500 hover:underline text-[10px]">Reset</button>
+                        </label>
+                        <input type="datetime-local" value={formatDateForInput(pricing.optimize.offerDuration)} onChange={e => handleChange('optimize', 'offerDuration', e.target.value)} className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none transition-all font-medium ${new Date(pricing.optimize.offerDuration) < new Date() ? 'border-red-200 bg-red-50 text-red-600' : 'border-slate-200'}`} />
+                      </div>
+                    </div>
+                    {pricing.optimize.offerDuration && new Date(pricing.optimize.offerDuration) < new Date() && (
+                      <p className="text-[11px] text-red-500 font-bold bg-red-50 px-3 py-2 rounded-lg border border-red-100 italic">⚠️ This offer has expired and is no longer visible to users.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </form>
+          )}
         </div>
 
-        {/* Optimize Section */}
-        <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
-          <h3 className="font-semibold text-slate-700 mb-4 flex items-center gap-2">
-            <ResumeOptimizeIcon size={18} /> AI Enhance Pricing
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Base Price ($)</label>
-              <input type="number" step="0.01" min="0" value={pricing.optimize.price} onChange={e => handleChange('optimize', 'price', Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
-            </div>
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="flex justify-between items-center text-xs font-medium text-slate-500 mb-1">
-                  <span>Offer Discount (%)</span>
-                  <button type="button" onClick={() => handleChange('optimize', 'offerDiscount', 0)} className="text-blue-500 hover:text-blue-600 font-semibold underline text-[10px]">Clear</button>
-                </label>
-                <input type="number" step="1" min="0" max="100" value={pricing.optimize.offerDiscount} onChange={e => handleChange('optimize', 'offerDiscount', Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
-              </div>
-              <div className="flex-1">
-                <label className="flex justify-between items-center text-xs font-medium text-slate-500 mb-1">
-                  <span>Offer Valid Until</span>
-                  <button type="button" onClick={() => handleChange('optimize', 'offerDuration', null)} className="text-blue-500 hover:text-blue-600 font-semibold underline text-[10px]">Clear</button>
-                </label>
-                <input type="datetime-local" value={formatDateForInput(pricing.optimize.offerDuration)} onChange={e => handleChange('optimize', 'offerDuration', e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
-              </div>
-            </div>
-          </div>
-        </div>
+        <footer className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
+          <button onClick={onClose} className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100 transition-colors">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            form="pricing-form"
+            disabled={saving || !pricing} 
+            className="px-8 py-2.5 rounded-xl text-sm font-bold text-white transition-all bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 disabled:opacity-50"
+          >
+            {saving ? 'Applying...' : 'Push Live Updates'}
+          </button>
+        </footer>
       </div>
-    </form>
+    </div>
   )
 }
 
@@ -438,6 +483,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
   const [username, setUsername] = useState('')
   const [authed, setAuthed] = useState(false)
+  const [showPricing, setShowPricing] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem('admin_token')
@@ -479,6 +525,11 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-slate-400">Signed in as <span className="font-semibold text-slate-600">{username}</span></span>
+            <div className="h-4 w-px bg-slate-200 mx-1" />
+            <button onClick={() => setShowPricing(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
+              <Settings size={13} /> Pricing
+            </button>
             <button onClick={handleLogout}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500 transition-all">
               <LogOut size={13} /> Logout
@@ -526,10 +577,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Pricing Section */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <PricingSection apiFetch={apiFetch} />
-        </div>
+        <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} apiFetch={apiFetch} />
 
         {/* Leads table */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">

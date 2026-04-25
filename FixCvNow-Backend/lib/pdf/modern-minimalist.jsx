@@ -70,11 +70,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 4,
   },
-  diamond: {
-    width: 8,
-    height: 8,
-    backgroundColor: C.accent,
-    transform: 'rotate(45deg)',
+  sectionBullet: {
+    fontSize: SZ.sectionHead - 2,
+    color: C.accent,
+    marginRight: 4,
   },
   sectionTitle: {
     fontSize: SZ.sectionHead,
@@ -87,12 +86,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     alignItems: 'flex-start',
   },
-  timelineDiamond: {
-    width: 6,
-    height: 6,
-    backgroundColor: C.accent,
-    transform: 'rotate(45deg)',
-    marginTop: 3,
+  timelineBullet: {
+    fontSize: SZ.body - 2,
+    color: C.accent,
+    marginTop: 2,
     marginRight: 8,
     flexShrink: 0,
   },
@@ -154,11 +151,9 @@ const styles = StyleSheet.create({
     gap: 5,
     marginBottom: 3,
   },
-  skillDiamond: {
-    width: 4,
-    height: 4,
-    backgroundColor: C.accent,
-    transform: 'rotate(45deg)',
+  skillBullet: {
+    fontSize: SZ.body - 2,
+    color: C.accent,
     flexShrink: 0,
   },
   skillText: {
@@ -203,7 +198,7 @@ const styles = StyleSheet.create({
 function SectionHeader({ title }) {
   return (
     <View style={styles.sectionHeader}>
-      <View style={styles.diamond} />
+      <Text style={styles.sectionBullet}>•</Text>
       <Text style={styles.sectionTitle}>{title}</Text>
     </View>
   )
@@ -318,7 +313,7 @@ export function ModernMinimalistPDF({ data }) {
               <SectionHeader title="Work History" />
               {data.experience.map((exp, i) => (
                 <View key={i} style={styles.timelineEntry}>
-                  <View style={styles.timelineDiamond} />
+                  <Text style={styles.timelineBullet}>•</Text>
                   <View style={styles.timelineDates}>
                     <Text style={styles.timelineDateTop}>{exp.start} –</Text>
                     <Text style={styles.timelineDateBot}>{exp.end || 'Present'}</Text>
@@ -340,7 +335,7 @@ export function ModernMinimalistPDF({ data }) {
               <View style={styles.skillsGrid}>
                 {allSkills.map((s, i) => (
                   <View key={i} style={styles.skillItem}>
-                    <View style={styles.skillDiamond} />
+                    <Text style={styles.skillBullet}>•</Text>
                     <Text style={styles.skillText}>{s}</Text>
                   </View>
                 ))}
@@ -354,7 +349,7 @@ export function ModernMinimalistPDF({ data }) {
               <SectionHeader title="Education" />
               {data.education.map((edu, i) => (
                 <View key={i} style={styles.timelineEntry}>
-                  <View style={styles.timelineDiamond} />
+                  <Text style={styles.timelineBullet}>•</Text>
                   <View style={styles.timelineDates}>
                     <Text style={styles.timelineDateTop}>{edu.endYear || edu.end || edu.year || ''}</Text>
                     {(edu.grade || edu.percentage || edu.gpa) && (
@@ -378,7 +373,7 @@ export function ModernMinimalistPDF({ data }) {
               <SectionHeader title="Certifications" />
               {data.certifications.map((cert, i) => (
                 <View key={i} style={styles.timelineEntry}>
-                  <View style={styles.timelineDiamond} />
+                  <Text style={styles.timelineBullet}>•</Text>
                   <View style={styles.timelineDates}>
                     <Text style={styles.timelineDateTop}>{cert.issueDate || cert.year || ''}</Text>
                   </View>

@@ -66,6 +66,7 @@ const styles = StyleSheet.create({
   rightCol: {
     width: RIGHT_W,
     paddingLeft: 14,
+    marginTop: 6,
     paddingRight: MARGIN,
     paddingTop: 16,
     paddingBottom: 24,

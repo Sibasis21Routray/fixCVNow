@@ -58,11 +58,10 @@ const styles = StyleSheet.create({
     gap: 5,
     marginBottom: 3,
   },
-  sectionSquare: {
-    width: 8,
-    height: 8,
-    backgroundColor: C.accent,
-    borderRadius: 1,
+  sectionBullet: {
+    fontSize: SZ.sectionHead - 2,
+    color: C.accent,
+    marginRight: 2,
   },
   sectionTitle: {
     fontSize: SZ.sectionHead,
@@ -253,7 +252,7 @@ export function ClassicProfessionalPDF({ data }) {
         {data.summary && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionSquare} />
+              <Text style={styles.sectionBullet}>•</Text>
               <Text style={styles.sectionTitle}>Profile Summary</Text>
             </View>
             <View style={styles.sectionDivider} />
@@ -264,7 +263,7 @@ export function ClassicProfessionalPDF({ data }) {
         {data.keyHighlights?.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionSquare} />
+              <Text style={styles.sectionBullet}>•</Text>
               <Text style={styles.sectionTitle}>Key Highlights</Text>
             </View>
             <View style={styles.sectionDivider} />
@@ -280,7 +279,7 @@ export function ClassicProfessionalPDF({ data }) {
         {grouped.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionSquare} />
+              <Text style={styles.sectionBullet}>•</Text>
               <Text style={styles.sectionTitle}>Professional Experience</Text>
             </View>
             <View style={styles.sectionDivider} />
@@ -333,7 +332,7 @@ export function ClassicProfessionalPDF({ data }) {
         {data.education?.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionSquare} />
+              <Text style={styles.sectionBullet}>•</Text>
               <Text style={styles.sectionTitle}>Education</Text>
             </View>
             <View style={styles.sectionDivider} />
@@ -359,7 +358,7 @@ export function ClassicProfessionalPDF({ data }) {
         {allSkills.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionSquare} />
+              <Text style={styles.sectionBullet}>•</Text>
               <Text style={styles.sectionTitle}>Skills</Text>
             </View>
             <View style={styles.sectionDivider} />
@@ -377,7 +376,7 @@ export function ClassicProfessionalPDF({ data }) {
         {data.languages?.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionSquare} />
+              <Text style={styles.sectionBullet}>•</Text>
               <Text style={styles.sectionTitle}>Languages</Text>
             </View>
             <View style={styles.sectionDivider} />
@@ -395,7 +394,7 @@ export function ClassicProfessionalPDF({ data }) {
         {data.certifications?.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionSquare} />
+              <Text style={styles.sectionBullet}>•</Text>
               <Text style={styles.sectionTitle}>Certifications</Text>
             </View>
             <View style={styles.sectionDivider} />
@@ -415,7 +414,7 @@ export function ClassicProfessionalPDF({ data }) {
         {data.awards?.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionSquare} />
+              <Text style={styles.sectionBullet}>•</Text>
               <Text style={styles.sectionTitle}>Awards & Recognition</Text>
             </View>
             <View style={styles.sectionDivider} />
@@ -431,7 +430,7 @@ export function ClassicProfessionalPDF({ data }) {
         {data.interests?.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionSquare} />
+              <Text style={styles.sectionBullet}>•</Text>
               <Text style={styles.sectionTitle}>Interests & Hobbies</Text>
             </View>
             <View style={styles.sectionDivider} />
@@ -450,7 +449,7 @@ export function ClassicProfessionalPDF({ data }) {
           section.items?.length > 0 && (
             <View key={sIdx} style={styles.section}>
               <View style={styles.sectionHeader}>
-                <View style={styles.sectionSquare} />
+                <Text style={styles.sectionBullet}>•</Text>
                 <Text style={styles.sectionTitle}>{section.title}</Text>
               </View>
               <View style={styles.sectionDivider} />

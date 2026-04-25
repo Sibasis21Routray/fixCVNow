@@ -142,8 +142,8 @@ export default function ResumePreview() {
   
   // Dynamic Pricing
   const [dynamicPricing, setDynamicPricing] = useState({
-    download: { final: 9, original: 9, hasOffer: false },
-    optimize: { final: 19, original: 19, hasOffer: false }
+    download: { final: 99, original: 124, hasOffer: true, discount: 20, expiresAt: new Date(Date.now() + 86400000).toISOString() },
+    optimize: { final: 19, original: 24, hasOffer: true, discount: 20, expiresAt: new Date(Date.now() + 86400000).toISOString() }
   });
 
   const OPTIMIZING_MESSAGES = [
@@ -209,13 +209,7 @@ export default function ResumePreview() {
       }
     }
 
-    // Restore optimize paymentId (for retry after page refresh)
-    const savedOptimizePaymentId = sessionStorage.getItem(
-      `optimizePaymentId_${sessionId}`
-    );
-    if (savedOptimizePaymentId) setOptimizePaymentId(savedOptimizePaymentId);
-
-    // Restore shared download unlock state (persisted so page refresh doesn't lose a paid unlock)
+    // Restore shared download unlock state
     const savedDownloadPaymentId = sessionStorage.getItem(`downloadPaymentId_${sessionId}`);
     const isConsumed = sessionStorage.getItem(`downloadConsumed_${sessionId}`) === "true";
     if (savedDownloadPaymentId) {
@@ -224,7 +218,7 @@ export default function ResumePreview() {
     }
 
     setLoading(false);
-  }, [sessionId]);
+  }, [sessionId, searchParams]);
 
   useEffect(() => {
     window.history.pushState(null, "", window.location.href);
@@ -341,10 +335,19 @@ export default function ResumePreview() {
     rzp.open();
   };
 
-  // ── Shared unlock (pay ₹9 — unlocks both PDF and Word, user picks one) ──
-  const handleUnlockDownload = () => {
+  // ── Unified Unlock Flow ──
+  const unlockAndDownload = async (format) => {
+    const purpose = viewMode === "optimized" ? "optimize" : "download";
+    const amountLabel = viewMode === "optimized" ? dynamicPricing.optimize.final : dynamicPricing.download.final;
+
+    if (downloadUnlocked) {
+      if (format === "pdf") handleDownloadPdf();
+      else handleDownloadWord();
+      return;
+    }
+
     openRazorpay({
-      purpose: "download",
+      purpose,
       templateId: activeTemplate,
       onSuccess: (paymentId) => {
         setDownloadPaymentId(paymentId);
@@ -352,9 +355,18 @@ export default function ResumePreview() {
         sessionStorage.setItem(`downloadPaymentId_${sessionId}`, paymentId);
         toast({
           title: "Payment successful!",
-          description: "Choose PDF or Word to download your resume.",
+          description: format ? "Your download is starting..." : "Download unlocked! Please select a format.",
           duration: 4000,
         });
+        
+        // Start download immediately if format was specified
+        if (format === "pdf") {
+           setIsDownloadingPdf(true);
+           setTimeout(() => handleDownloadPdf(paymentId), 500);
+        } else if (format === "word") {
+           setIsDownloadingWord(true);
+           setTimeout(() => handleDownloadWord(paymentId), 500);
+        }
       },
       onDismiss: () => {},
     });
@@ -407,7 +419,9 @@ export default function ResumePreview() {
   };
 
   // ── Download PDF (after unlock) ──
-  const handleDownloadPdf = async () => {
+  const handleDownloadPdf = async (explicitPid) => {
+    const pid = explicitPid || downloadPaymentId;
+    if (!pid) return;
     setIsDownloadingPdf(true);
     try {
       const res = await fetch(`${API_URL}/api/download/pdf`, {
@@ -416,7 +430,7 @@ export default function ResumePreview() {
         body: JSON.stringify({
           resumeData: displayData,
           templateId: activeTemplate,
-          paymentId: downloadPaymentId,
+          paymentId: pid,
           sessionId,
         }),
       });
@@ -446,7 +460,9 @@ export default function ResumePreview() {
   };
 
   // ── Download Word (after unlock) ──
-  const handleDownloadWord = async () => {
+  const handleDownloadWord = async (explicitPid) => {
+    const pid = explicitPid || downloadPaymentId;
+    if (!pid) return;
     setIsDownloadingWord(true);
     try {
       const res = await fetch(`${API_URL}/api/download/word`, {
@@ -455,7 +471,7 @@ export default function ResumePreview() {
         body: JSON.stringify({
           resumeData: displayData,
           templateId: activeTemplate,
-          paymentId: downloadPaymentId,
+          paymentId: pid,
           sessionId,
         }),
       });
@@ -484,8 +500,8 @@ export default function ResumePreview() {
     }
   };
 
-  // ── Run AI optimization (with paymentId for server verification) ──
-  const runOptimization = async (paymentId) => {
+  // ── Run AI optimization ──
+  const runOptimization = async () => {
     if (!resumeData) return;
     setIsOptimizing(true);
     setOptimizeFailed(false);
@@ -494,7 +510,7 @@ export default function ResumePreview() {
       const res = await fetch(`${API_URL}/api/optimize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resumeData, fileId, paymentId, sessionId }),
+        body: JSON.stringify({ resumeData, fileId, sessionId }),
       });
 
       if (!res.ok) throw new Error("Optimization failed");
@@ -506,19 +522,12 @@ export default function ResumePreview() {
         `optimized_${sessionId}`,
         JSON.stringify(data.optimizedData)
       );
-      // Clear the optimize paymentId — no longer needed after success
-      sessionStorage.removeItem(`optimizePaymentId_${sessionId}`);
-      setOptimizePaymentId(null);
-      // Unlock download as part of the optimize purchase
-      setDownloadPaymentId(paymentId);
-      setDownloadUnlocked(true);
-      sessionStorage.setItem(`downloadPaymentId_${sessionId}`, paymentId);
     } catch {
       setOptimizeFailed(true);
       toast({
         title: "Optimization failed",
         description:
-          "Something went wrong while optimizing your resume. You can retry — no additional payment needed.",
+          "Something went wrong while optimizing your resume. Please try again.",
         variant: "destructive",
         duration: 8000,
       });
@@ -527,18 +536,8 @@ export default function ResumePreview() {
     }
   };
 
-  // ── Optimize button clicked (opens payment first) ──
   const handleOptimize = () => {
-    openRazorpay({
-      purpose: "optimize",
-      onSuccess: (paymentId) => {
-        // Store paymentId so retry doesn't re-charge
-        setOptimizePaymentId(paymentId);
-        sessionStorage.setItem(`optimizePaymentId_${sessionId}`, paymentId);
-        runOptimization(paymentId);
-      },
-      onDismiss: () => {},
-    });
+    runOptimization();
   };
 
   // ── Retry optimization (uses already-paid paymentId, no new charge) ──
@@ -687,7 +686,7 @@ export default function ResumePreview() {
                   OPTIMIZE CARD
                   Hidden after optimization completes
               ───────────────────────────────────── */}
-              {!hasOptimized && !isOptimizing && (
+             
                 <div
                   className="bg-white rounded-2xl p-5 border-2 shadow-sm"
                   style={{ borderColor: COLORS.green }}
@@ -701,19 +700,10 @@ export default function ResumePreview() {
                     </div>
                     <div>
                       <h3 className="font-bold text-slate-800 text-sm">
-                        AI Optimized Resume
+                        AI Optimized Preview
                       </h3>
-                      <span className="text-xs font-bold" style={{ color: COLORS.green }}>
-                        ₹{dynamicPricing.optimize.final}
-                        {dynamicPricing.optimize.hasOffer && (
-                          <span className="ml-1 inline-flex items-center gap-1">
-                            <span className="text-[10px] text-slate-400 line-through">{dynamicPricing.optimize.original}</span>
-                            <span className="text-[9px] bg-green-100 text-green-700 px-1 py-0.5 rounded uppercase tracking-wider">
-                              {dynamicPricing.optimize.discount}% Off ends {new Date(dynamicPricing.optimize.expiresAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })}
-                            </span>
-                          </span>
-                        )}
-                        {' '}· One-time AI enhancement
+                      <span className="text-xs font-bold text-green-600">
+                        FREE PREVIEW · See the difference instantly
                       </span>
                     </div>
                   </div>
@@ -721,51 +711,37 @@ export default function ResumePreview() {
                   <ul className="text-xs text-slate-600 space-y-1.5 mb-4">
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
-                      ATS-friendly keywords
+                       Professionally rewritten profile summary
                     </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
-                      Strong action verbs
+                      Role-aligned, recruiter-focused experience
                     </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
-                      Quantified achievements
+                      Quantified achievements that stand out
                     </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
-                      Compare original vs AI version
+                      ATS-friendly keywords for better shortlisting
                     </li>
                   </ul>
 
-                  {optimizeFailed ? (
-                    // Retry state — optimization failed but payment was made
-                    <div>
-                      <div className="flex items-center gap-2 mb-3 p-2.5 bg-red-50 rounded-lg">
-                        <AlertCircle size={14} className="text-red-400 flex-shrink-0" />
-                        <p className="text-xs text-red-600">
-                          Optimization failed. No additional charge for retry.
-                        </p>
-                      </div>
-                      <button
-                        onClick={handleRetryOptimization}
-                        className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90 flex items-center justify-center gap-2"
-                        style={{ backgroundColor: COLORS.green }}
-                      >
-                        <ResumeOptimizeIcon size={15} />
-                        Retry Optimization (Free)
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={handleOptimize}
-                      className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
-                      style={{ backgroundColor: COLORS.green }}
-                    >
-                      Pay ₹{dynamicPricing.optimize.final} &amp; Optimize
-                    </button>
-                  )}
+                  {/* <button
+                    onClick={handleOptimize}
+                    disabled={isOptimizing}
+                    className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70"
+                    style={{ backgroundColor: COLORS.green }}
+                  >
+                    {isOptimizing ? (
+                       <Loader2 size={15} className="animate-spin" />
+                    ) : (
+                       <ResumeOptimizeIcon size={15} />
+                    )}
+                    {isOptimizing ? "Optimizing..." : "Preview AI Upgrade (Free)"}
+                  </button> */}
                 </div>
-              )}
+             
 
               {/* ─────────────────────────────────────
                   DOWNLOAD CARD
@@ -776,20 +752,21 @@ export default function ResumePreview() {
                     <SecureDownloadIcon size={19} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-800 text-sm">
-                      Download Resume
-                    </h3>
+                    {/* <h3 className="font-bold text-slate-800 text-sm">
+                      Download Finished Resume
+                    </h3> */}
                     <div className="flex flex-col">
-                      <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
-                        ₹{dynamicPricing.download.final} 
-                        {dynamicPricing.download.hasOffer && (
-                          <span className="text-[10px] text-slate-300 line-through ml-1">{dynamicPricing.download.original}</span>
-                        )}
-                        {' '}per download · PDF or Word
-                      </span>
-                      {dynamicPricing.download.hasOffer && (
+                      <div className="flex items-center gap-2">
+                         <span className="text-xs text-slate-500 font-bold whitespace-nowrap">
+                           {viewMode === "optimized" ? "AI-Optimized Resume — " : "Professional Clean Resume  — "} ₹{(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).final.toFixed(2)}
+                         </span>
+                         {(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).hasOffer && (
+                           <span className="text-[10px] text-slate-400 line-through">₹{(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).original.toFixed(2)}</span>
+                         )}
+                      </div>
+                      {(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).hasOffer && (
                         <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded uppercase tracking-wider w-fit mt-0.5">
-                          {dynamicPricing.download.discount}% Off ends {new Date(dynamicPricing.download.expiresAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })}
+                          {(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).discount}% Off
                         </span>
                       )}
                     </div>
@@ -797,8 +774,7 @@ export default function ResumePreview() {
                 </div>
 
                 <p className="text-xs text-slate-500 mb-3 leading-relaxed">
-                  Pay to unlock, then click to download. Switch template before
-                  unlocking — each download is a separate payment.
+                  Choose your format below. Pay once to unlock the download for the currently selected version.
                 </p>
 
                 {/* ── Version notice ── */}
@@ -824,59 +800,60 @@ export default function ResumePreview() {
                   <div className="flex items-start gap-2 mb-3 p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
                     <Info size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-blue-700 leading-relaxed">
-                      Downloading original resume. Want the AI enhanced version?
-                      Pay <strong>₹{dynamicPricing.optimize.final}</strong> to optimize first.
+                      You are viewing the <strong>Original Clean</strong> resume. 
+                      Click <strong>AI Optimized</strong> above to preview the upgrade for free!
                     </p>
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  {/* ── Single Pay button (locked state) ── */}
-                  {!downloadUnlocked && !isDownloadingPdf && !isDownloadingWord && (
+                <div className="space-y-3">
+                  {!downloadUnlocked ? (
                     <button
-                      className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90 flex items-center justify-center gap-2"
-                      style={{ backgroundColor: COLORS.blue }}
-                      onClick={handleUnlockDownload}
+                      className="w-full py-4 rounded-xl font-black text-base text-white transition-all hover:scale-[1.02] active:scale-95 shadow-lg flex flex-col items-center justify-center gap-1 group"
+                      style={{ backgroundColor: "#16a34a" }}
+                      onClick={() => unlockAndDownload()}
                     >
-                      <Lock size={15} />
-                      Pay ₹{dynamicPricing.download.final} · Unlock Download
-                    </button>
-                  )}
-
-                  {/* ── PDF Button (unlocked or downloading) ── */}
-                  {(downloadUnlocked || isDownloadingPdf) && (
-                    <button
-                      className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                      style={{ backgroundColor: isDownloadingPdf ? COLORS.blue : "#16a34a" }}
-                      onClick={handleDownloadPdf}
-                      disabled={isDownloadingPdf || isDownloadingWord}
-                    >
-                      {isDownloadingPdf ? (
-                        <><Loader2 size={15} className="animate-spin" />Generating PDF…</>
-                      ) : (
-                        <><LockOpen size={15} />Download PDF</>
+                      <div className="flex items-center gap-2">
+                        <Lock size={18} className="group-hover:animate-bounce" />
+                        <span>Pay ₹{(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).final.toFixed(2)} to Unlock Download</span>
+                      </div>
+                      {(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).hasOffer && (
+                        <div className="flex items-center gap-2 text-[10px] opacity-90 font-bold uppercase tracking-wider">
+                          <span className="line-through">₹{(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).original.toFixed(2)}</span>
+                          <span className="bg-white/20 px-1 rounded">{(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).discount}% OFF</span>
+                        </div>
                       )}
                     </button>
-                  )}
+                  ) : (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-500">
+                     
+                      
+                      <button
+                        className="w-full py-3 rounded-xl font-bold text-sm text-white transition-all  hover:opacity-90 flex items-center justify-center gap-2 border-b-4 border-green-700 active:border-b-0 active:translate-y-1"
+                        style={{ backgroundColor: "#16a34a" }}
+                        onClick={() => handleDownloadPdf()}
+                        disabled={isDownloadingPdf}
+                      >
+                        {isDownloadingPdf ? (
+                          <><Loader2 size={15} className="animate-spin" />Generating PDF…</>
+                        ) : (
+                           <><LockOpen size={16} />Download  PDF</>
+                        )}
+                      </button>
 
-                  {/* ── Word Button (unlocked or downloading) ── */}
-                  {(downloadUnlocked || isDownloadingWord) && (
-                    <button
-                      className="w-full py-2.5 rounded-xl font-bold text-sm border-2 transition-all hover:bg-green-50 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                      style={
-                        isDownloadingWord
-                          ? { borderColor: COLORS.blue, color: COLORS.blue }
-                          : { borderColor: "#16a34a", color: "#16a34a" }
-                      }
-                      onClick={handleDownloadWord}
-                      disabled={isDownloadingWord || isDownloadingPdf}
-                    >
-                      {isDownloadingWord ? (
-                        <><Loader2 size={15} className="animate-spin" />Generating Word…</>
-                      ) : (
-                        <><LockOpen size={15} />Download Word</>
-                      )}
-                    </button>
+                      <button
+                        className="w-full py-3 rounded-xl font-bold text-sm border-2 transition-all hover:bg-green-50 flex items-center justify-center gap-2 border-b-4 border-green-700 active:border-b-0 active:translate-y-1"
+                        style={{ borderColor: "#16a34a", color: "#16a34a" }}
+                        onClick={() => handleDownloadWord()}
+                        disabled={isDownloadingWord}
+                      >
+                        {isDownloadingWord ? (
+                          <><Loader2 size={15} className="animate-spin" />Generating Word…</>
+                        ) : (
+                           <><LockOpen size={16} />Download Word</>
+                        )}
+                      </button>
+                    </div>
                   )}
 
                   {/* ── Invoice Button (whenever we have a paymentId) ── */}

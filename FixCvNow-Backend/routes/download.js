@@ -17,6 +17,8 @@ const { getPDFComponent, getInvoicePDFComponent } = await import(pathToFileURL(p
 const { getWordDocument } = await import(pathToFileURL(path.resolve(__dirname, '../lib/word/index.js')).href)
 const { createInvoiceFromPayment } = await import(pathToFileURL(path.resolve(__dirname, '../lib/invoice.js')).href)
 
+const { convertPdfToDocx } = await import(pathToFileURL(path.resolve(__dirname, '../lib/utils/adobe.js')).href)
+
 const router = Router()
 
 // POST /api/download/pdf
@@ -96,16 +98,30 @@ router.post('/word', async (req, res) => {
       return res.status(402).json({ error: 'Payment not found, already consumed, or invalid' })
     }
 
-    const doc = getWordDocument(resumeData, templateId ?? 1)
-    const buffer = await Packer.toBuffer(doc)
+    let buffer;
+    let method = 'Adobe';
     const filename = `${(resumeData.name || 'resume').replace(/[^a-z0-9]/gi, '_')}.docx`
+
+    try {
+      // PREFERRED: Use Adobe to convert the high-quality PDF to DOCX
+      console.log(`[Download Word] Attempting Adobe conversion...`)
+      const pdfElement = getPDFComponent(resumeData, templateId ?? 1)
+      const pdfBuffer = await renderToBuffer(pdfElement)
+      buffer = await convertPdfToDocx(pdfBuffer)
+    } catch (adobeErr) {
+      console.warn(`[Download Word] Adobe failed, falling back to local generation:`, adobeErr.message)
+      method = 'Local';
+      // FALLBACK: Use existing local Word doc generation
+      const doc = getWordDocument(resumeData, templateId ?? 1)
+      buffer = await Packer.toBuffer(doc)
+    }
 
     // Mark as consumed AFTER successful generation
     payment.downloadConsumed = true
     await payment.save()
 
     const ms = Date.now() - start
-    console.log(`[Download Word] template:${templateId ?? 1} | size: ${(buffer.length / 1024).toFixed(1)} KB | time: ${(ms / 1000).toFixed(2)}s | file: ${filename} | payment: ${paymentId}`)
+    console.log(`[Download Word] ${method} | template:${templateId ?? 1} | size: ${(buffer.length / 1024).toFixed(1)} KB | time: ${(ms / 1000).toFixed(2)}s | file: ${filename} | payment: ${paymentId}`)
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
@@ -174,7 +190,7 @@ router.post('/invoice', async (req, res) => {
       amount: payment.amount,
       currency: payment.currency,
       date: payment.paidAt || payment.createdAt,
-      description: payment.purpose === 'optimize' ? 'AI-optimized' : 'Professional clean',
+      description: payment.purpose === 'optimize' ? 'AI Optimized Resume Upgrade' : 'Original Clean Professional Resume',
       templateId: payment.templateId,
       purpose: payment.purpose,
       items: null // Will use fallback in PDF component
