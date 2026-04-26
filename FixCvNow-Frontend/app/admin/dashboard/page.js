@@ -365,7 +365,7 @@ function PricingModal({ isOpen, onClose, apiFetch }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 ">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
       
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
@@ -538,7 +538,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-12">
 
         {/* Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

@@ -128,7 +128,7 @@ export default function ResumePreview() {
   const [optimizePaymentId, setOptimizePaymentId] = useState(null);
 
   // Shared download unlock — ₹9 unlocks both PDF and Word; resets after one download
-  const [downloadUnlocked, setDownloadUnlocked] = useState(false);
+  const [unlockedPurpose, setUnlockedPurpose] = useState(null);
   const [downloadPaymentId, setDownloadPaymentId] = useState(null);
 
   // Download loading states (true while generating file after payment)
@@ -212,9 +212,10 @@ export default function ResumePreview() {
     // Restore shared download unlock state
     const savedDownloadPaymentId = sessionStorage.getItem(`downloadPaymentId_${sessionId}`);
     const isConsumed = sessionStorage.getItem(`downloadConsumed_${sessionId}`) === "true";
+    const savedPurpose = sessionStorage.getItem(`unlockedPurpose_${sessionId}`);
     if (savedDownloadPaymentId) {
       setDownloadPaymentId(savedDownloadPaymentId);
-      if (!isConsumed) setDownloadUnlocked(true);
+      if (!isConsumed) setUnlockedPurpose(savedPurpose || "download");
     }
 
     setLoading(false);
@@ -340,7 +341,7 @@ export default function ResumePreview() {
     const purpose = viewMode === "optimized" ? "optimize" : "download";
     const amountLabel = viewMode === "optimized" ? dynamicPricing.optimize.final : dynamicPricing.download.final;
 
-    if (downloadUnlocked) {
+    if (unlockedPurpose === purpose) {
       if (format === "pdf") handleDownloadPdf();
       else handleDownloadWord();
       return;
@@ -351,7 +352,8 @@ export default function ResumePreview() {
       templateId: activeTemplate,
       onSuccess: (paymentId) => {
         setDownloadPaymentId(paymentId);
-        setDownloadUnlocked(true);
+        setUnlockedPurpose(purpose);
+        sessionStorage.setItem(`unlockedPurpose_${sessionId}`, purpose);
         sessionStorage.setItem(`downloadPaymentId_${sessionId}`, paymentId);
         toast({
           title: "Payment successful!",
@@ -413,7 +415,7 @@ export default function ResumePreview() {
 
   // ── Reset shared lock (called after either format is downloaded) ──
   const resetDownloadLock = () => {
-    setDownloadUnlocked(false);
+    setUnlockedPurpose(null);
     // Keep downloadPaymentId for invoice access
     sessionStorage.setItem(`downloadConsumed_${sessionId}`, "true");
   };
@@ -432,6 +434,7 @@ export default function ResumePreview() {
           templateId: activeTemplate,
           paymentId: pid,
           sessionId,
+          purpose: viewMode === "optimized" ? "optimize" : "download",
         }),
       });
       if (!res.ok) {
@@ -473,6 +476,7 @@ export default function ResumePreview() {
           templateId: activeTemplate,
           paymentId: pid,
           sessionId,
+          purpose: viewMode === "optimized" ? "optimize" : "download",
         }),
       });
       if (!res.ok) {
@@ -807,7 +811,7 @@ export default function ResumePreview() {
                 )}
 
                 <div className="space-y-3">
-                  {!downloadUnlocked ? (
+                  {unlockedPurpose !== (viewMode === "optimized" ? "optimize" : "download") ? (
                     <button
                       className="w-full py-4 rounded-xl font-black text-base text-white transition-all hover:scale-[1.02] active:scale-95 shadow-lg flex flex-col items-center justify-center gap-1 group"
                       style={{ backgroundColor: "#16a34a" }}

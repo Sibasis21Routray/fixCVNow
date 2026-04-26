@@ -108,9 +108,9 @@ export default function ProcessingPage() {
   }, [optProgress, phase])
 
   // ─────────────────────────────────────────────
-  // Extraction via SSE ReadableStream with minimum duration
-  // ─────────────────────────────────────────────
-  const performExtraction = useCallback(async () => {
+  // Extraction via SSE ReadableStream with minimum duration backwards progress
+// ─────────────────────────────────────────────
+const performExtraction = useCallback(async () => {
     setError(null)
     setIsComplete(false)
     setCompletedSections(new Set())
@@ -118,11 +118,45 @@ export default function ProcessingPage() {
     setCurrentSectionLabel(EXTRACTION_SECTIONS[0].label)
     realExtractionCompleteRef.current = false
     
-    // Record start time
     startTimeRef.current = Date.now()
+    const MIN_DURATION = 15000 // 15 seconds minimum
 
     const controller = new AbortController()
     abortRef.current = controller
+
+    let apiCompleted = false
+    const progressRef = { current: 0 } // Use object ref instead of closure variable
+    
+    // Fake progress timer
+    const progressTimer = setInterval(() => {
+      if (apiCompleted) return
+      
+      const elapsed = Date.now() - startTimeRef.current
+      const progressPercent = Math.min(85, (elapsed / MIN_DURATION) * 100)
+      
+      // Add small random increment, but ensure we never go backwards
+      const randomIncrement = Math.random() * 2 + 0.5 // 0.5 to 2.5
+      const newProgress = Math.min(85, Math.max(progressRef.current, progressPercent + randomIncrement))
+      
+      if (newProgress > progressRef.current) {
+        progressRef.current = newProgress
+        setExtractionProgress(newProgress)
+        
+        // Update completed sections based on progress
+        const sectionsComplete = Math.floor(newProgress / (85 / PARALLEL_SECTION_KEYS.length))
+        setCompletedSections(prev => {
+          const next = new Set(prev)
+          PARALLEL_SECTION_KEYS.slice(0, sectionsComplete).forEach(k => next.add(k))
+          return next
+        })
+        
+        // Update current label
+        if (sectionsComplete < PARALLEL_SECTION_KEYS.length) {
+          const section = EXTRACTION_SECTIONS.find(s => s.key === PARALLEL_SECTION_KEYS[sectionsComplete])
+          if (section) setCurrentSectionLabel(section.label)
+        }
+      }
+    }, 500 + Math.random() * 500)
 
     try {
       const file = sessionStorage_util.getUploadedFile()
@@ -142,7 +176,6 @@ export default function ProcessingPage() {
         throw new Error(data.error || 'Extraction failed. Please try again.')
       }
 
-      // Read SSE stream
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
@@ -153,39 +186,36 @@ export default function ProcessingPage() {
 
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')
-        buffer = lines.pop() // keep incomplete last line
+        buffer = lines.pop()
 
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue
 
-          // Separate JSON parse errors (malformed lines) from real event errors
           let event
           try {
             event = JSON.parse(line.slice(6))
           } catch {
-            continue // malformed SSE line — skip silently
+            continue
           }
 
-          if (event.type === 'progress') {
-            if (event.status === 'done') {
-              // Count-based progress — always increases regardless of completion order
-              setCompletedSections((prev) => {
-                const next = new Set([...prev, event.section])
-                const doneCount = PARALLEL_SECTION_KEYS.filter(k => next.has(k)).length
-                setExtractionProgress(COUNT_TO_PROGRESS[doneCount] ?? 12)
-                setCurrentSectionLabel(`${doneCount} of 5 sections complete`)
-                return next
-              })
-            } else {
-              // Upload / in-progress events — only move forward
-              setExtractionProgress(prev => Math.max(prev, 5))
-              setCurrentSectionLabel(event.label)
-            }
+          if (event.type === 'progress' && event.status === 'done') {
+            setCompletedSections(prev => {
+              const next = new Set([...prev, event.section])
+              const doneCount = PARALLEL_SECTION_KEYS.filter(k => next.has(k)).length
+              const realProgress = COUNT_TO_PROGRESS[doneCount] ?? 12
+              
+              // Only update if higher than current
+              if (realProgress > progressRef.current) {
+                progressRef.current = realProgress
+                setExtractionProgress(realProgress)
+              }
+              return next
+            })
           }
 
           if (event.type === 'done') {
-            // Mark real extraction as complete
-            realExtractionCompleteRef.current = true
+            apiCompleted = true
+            clearInterval(progressTimer)
             
             leadsStorage.updateLead(sessionId, event.leadData)
             resumeStorage.saveResumeData(sessionId, event.resumeData)
@@ -195,40 +225,63 @@ export default function ProcessingPage() {
             sessionStorage.setItem(`extracted_${sessionId}`, 'true')
 
             setCompletedSections(new Set(EXTRACTION_SECTIONS.map((s) => s.key)))
-            // Set to 95% instead of 100% to avoid premature 100% display
-            setExtractionProgress(95)
-            setCurrentSectionLabel('Almost done!')
             setIsComplete(true)
 
-            // Check if minimum duration has passed
-            const elapsedTime = Date.now() - startTimeRef.current
-            const remainingTime = Math.max(0, MIN_EXTRACTION_DURATION - elapsedTime)
+            // Calculate remaining time
+            const elapsed = Date.now() - startTimeRef.current
+            const remaining = Math.max(0, MIN_DURATION - elapsed)
             
-            if (remainingTime > 0) {
-              // Wait for remaining time, then set to 100% and redirect
-              setTimeout(() => {
-                setExtractionProgress(100)
-                setTimeout(() => {
-                  window.location.replace(`/?id=${sessionId}`)
-                }, 300)
-              }, remainingTime)
+            if (remaining > 1000) {
+              // Smooth animation for remaining time - calculate target progress
+              const startProgress = progressRef.current
+              const smoothProgressInterval = setInterval(() => {
+                const now = Date.now()
+                const totalElapsed = now - startTimeRef.current
+                const timeLeft = MIN_DURATION - totalElapsed
+                
+                if (timeLeft <= 0) {
+                  clearInterval(smoothProgressInterval)
+                  progressRef.current = 100
+                  setExtractionProgress(100)
+                  setCurrentSectionLabel('Complete!')
+                  setTimeout(() => {
+                    window.location.replace(`/?id=${sessionId}`)
+                  }, 200)
+                  return
+                }
+                
+                // Calculate progress based on elapsed time since API response
+                const timeSinceApiDone = totalElapsed - elapsed
+                const progressRange = 100 - startProgress
+                const additionalProgress = (timeSinceApiDone / remaining) * progressRange
+                const finalProgress = Math.min(100, startProgress + additionalProgress)
+                
+                if (finalProgress > progressRef.current) {
+                  progressRef.current = finalProgress
+                  setExtractionProgress(finalProgress)
+                  setCurrentSectionLabel('Finalizing resume...')
+                }
+              }, 100)
             } else {
-              // Already passed minimum time, set to 100% and redirect
+              // Less than 1 second remaining, just complete
+              progressRef.current = 100
               setExtractionProgress(100)
+              setCurrentSectionLabel('Complete!')
               setTimeout(() => {
                 window.location.replace(`/?id=${sessionId}`)
-              }, 300)
+              }, remaining + 300)
             }
           }
 
           if (event.type === 'error') {
-            // Real backend error — always show to user
+            clearInterval(progressTimer)
             throw new Error(event.error || 'Extraction failed. Please try again.')
           }
         }
       }
 
     } catch (err) {
+      clearInterval(progressTimer)
       if (err.name === 'AbortError') return
       console.warn('[ProcessingPage] Extraction error:', err.message)
       setError(err.message || 'Failed to extract resume. Please try again.')

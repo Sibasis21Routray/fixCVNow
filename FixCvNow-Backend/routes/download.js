@@ -25,13 +25,13 @@ const router = Router()
 router.post('/pdf', async (req, res) => {
   const start = Date.now()
   try {
-    const { resumeData, templateId, paymentId, sessionId } = req.body
+    const { resumeData, templateId, paymentId, sessionId, purpose } = req.body
 
     if (!resumeData) {
       return res.status(400).json({ error: 'Missing resumeData' })
     }
 
-    if (!sessionId || !paymentId) {
+    if (!sessionId || !paymentId || !purpose) {
       return res.status(402).json({ error: 'Payment required for download' })
     }
 
@@ -39,12 +39,13 @@ router.post('/pdf', async (req, res) => {
     const payment = await Payment.findOne({
       sessionId,
       paymentId,
+      purpose,
       status: 'paid',
       downloadConsumed: false
     })
 
     if (!payment) {
-      return res.status(402).json({ error: 'Payment not found, already consumed, or invalid' })
+      return res.status(402).json({ error: 'Payment not found, already consumed, invalid, or wrong purpose' })
     }
 
     const pdfElement = getPDFComponent(resumeData, templateId ?? 1)
@@ -76,13 +77,13 @@ router.post('/pdf', async (req, res) => {
 router.post('/word', async (req, res) => {
   const start = Date.now()
   try {
-    const { resumeData, templateId, paymentId, sessionId } = req.body
+    const { resumeData, templateId, paymentId, sessionId, purpose } = req.body
 
     if (!resumeData) {
       return res.status(400).json({ error: 'Missing resumeData' })
     }
 
-    if (!sessionId || !paymentId) {
+    if (!sessionId || !paymentId || !purpose) {
       return res.status(402).json({ error: 'Payment required for download' })
     }
 
@@ -90,12 +91,13 @@ router.post('/word', async (req, res) => {
     const payment = await Payment.findOne({
       sessionId,
       paymentId,
+      purpose,
       status: 'paid',
       downloadConsumed: false
     })
 
     if (!payment) {
-      return res.status(402).json({ error: 'Payment not found, already consumed, or invalid' })
+      return res.status(402).json({ error: 'Payment not found, already consumed, invalid, or wrong purpose' })
     }
 
     let buffer;

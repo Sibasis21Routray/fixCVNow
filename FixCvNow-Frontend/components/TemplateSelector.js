@@ -14,6 +14,7 @@ import { SerifPreview } from '@/components/templates/minimal-serif'
 import { ModernPreview } from '@/components/templates/modern-minimalist'
 import { ClassicBoldPreview } from '@/components/templates/classic-bold'
 import { EarlyCareerPreview } from '@/components/templates/classic-early-career'
+import {ResumeProcessingOverlay} from './ResumeProcessingOverlay'
 // ─────────────────────────────────────────────
 // Fallback sample data shown only if nothing extracted
 // ─────────────────────────────────────────────
@@ -64,28 +65,8 @@ export default function TemplateSelector() {
 
   // Optimization state
   const [isOptimizing, setIsOptimizing] = useState(false)
-  const [optimizingMsgIndex, setOptimizingMsgIndex] = useState(0)
 
-  const OPTIMIZING_MESSAGES = [
-    "Generating your AI Career Upgrade...",
-    "Improving your profile summary...",
-    "Optimizing role descriptions...",
-    "Extracting key skills...",
-    "Enhancing achievement phrasing...",
-    "Adding ATS keywords...",
-    "Final polishing...",
-  ];
 
-  useEffect(() => {
-    if (!isOptimizing) return;
-    setOptimizingMsgIndex(0);
-    const interval = setInterval(() => {
-      setOptimizingMsgIndex((prev) =>
-        prev < OPTIMIZING_MESSAGES.length - 1 ? prev + 1 : prev
-      );
-    }, 2800);
-    return () => clearInterval(interval);
-  }, [isOptimizing]);
 
   useEffect(() => {
     if (!sessionId) return
@@ -290,32 +271,11 @@ export default function TemplateSelector() {
       </div>
 
       {/* ── Optimization Overlay ── */}
-      {isOptimizing && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/90 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="max-w-md w-full px-6 text-center">
-            
-            
-            <h3 className="text-2xl font-bold text-slate-800 mb-2">
-              Transforming Your Resume
-            </h3>
-            
-            <div className="flex items-center justify-center gap-2 mb-6 text-green-600 font-bold">
-               <Loader2 className="animate-spin" size={20} />
-               <span>AI-Powered Optimization in Progress</span>
-            </div>
-
-            <div className=" min-h-[100px] flex items-center justify-center">
-               <p className="text-slate-600 font-medium animate-in slide-in-from-bottom-2 transition-all key={optimizingMsgIndex}">
-                 {OPTIMIZING_MESSAGES[optimizingMsgIndex]}
-               </p>
-            </div>
-            
-            <p className="mt-8 text-xs text-slate-400 uppercase tracking-widest font-bold">
-               FixCVNow AI Engine v2.0
-            </p>
-          </div>
-        </div>
-       )} 
+  {isOptimizing && (
+ <ResumeProcessingOverlay
+  isVisible={isOptimizing}
+/>
+)}
     </div>
   )
 }

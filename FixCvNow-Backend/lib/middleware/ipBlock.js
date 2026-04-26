@@ -44,7 +44,7 @@ export const incrementParseCount = async (ip) => {
     )
     
     // Threshold: 10 parses without download/optimize
-    if (activity.parseCount >= 5) {
+    if (activity.parseCount >= 10) {
       const blockTime = new Date(Date.now() + 10 * 60 * 60 * 1000) // 10 hours
       await IPActivity.updateOne({ ip }, { $set: { blockedUntil: blockTime } })
       console.log(`[IPBlock] Blocked IP ${ip} for 10 hours (10+ parses without conversion)`)
