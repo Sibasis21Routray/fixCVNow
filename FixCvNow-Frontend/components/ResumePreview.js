@@ -682,156 +682,247 @@ export default function ResumePreview() {
 
           {/* ── Sidebar ── */}
           <div className="lg:col-span-4">
-            <div className="sticky top-8 space-y-4">
-
-
-
-               {/* ─────────────────────────────────────
-                  OPTIMIZE CARD
-                  Hidden after optimization completes
+            <div className="sticky top-8 mt-[7vh] space-y-4">
+                {/* ─────────────────────────────────────
+                  OPTIMIZATION COMPLETE
               ───────────────────────────────────── */}
-             
+              {hasOptimized && !isOptimizing && (
                 <div
                   className="bg-white rounded-2xl p-5 border-2 shadow-sm"
                   style={{ borderColor: COLORS.green }}
                 >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: `${COLORS.green}18` }}
-                    >
-                      <ResumeOptimizeIcon size={19} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-800 text-sm">
-                        AI Optimized Preview
-                      </h3>
-                      <span className="text-xs font-bold text-green-600">
-                        FREE PREVIEW · See the difference instantly
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2
+                      size={18}
+                      className="text-green-500 flex-shrink-0"
+                    />
+                    <h3 className="font-bold text-slate-800 text-sm">
+                      AI Optimization Complete
+                    </h3>
                   </div>
-
-                  <ul className="text-xs text-slate-600 space-y-1.5 mb-4">
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
-                       Professionally rewritten profile summary
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
-                      Role-aligned, recruiter-focused experience
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
-                      Quantified achievements that stand out
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
-                      ATS-friendly keywords for better shortlisting
-                    </li>
-                  </ul>
-
-                  {/* <button
-                    onClick={handleOptimize}
-                    disabled={isOptimizing}
-                    className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70"
-                    style={{ backgroundColor: COLORS.green }}
-                  >
-                    {isOptimizing ? (
-                       <Loader2 size={15} className="animate-spin" />
-                    ) : (
-                       <ResumeOptimizeIcon size={15} />
-                    )}
-                    {isOptimizing ? "Optimizing..." : "Preview AI Upgrade (Free)"}
-                  </button> */}
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Use the <strong>toggle above the resume </strong>to compare
+                    your original and AI-optimized versions. Download either
+                    version using the buttons above.
+                  </p>
                 </div>
-             
+              )}
+
 
               {/* ─────────────────────────────────────
+                  OPTIMIZE CARD
+                  Hidden after optimization completes
+              ───────────────────────────────────── */}
+
+              <div
+                className="bg-white rounded-2xl p-5 border-2 shadow-sm"
+                style={{ borderColor: COLORS.green }}
+              >
+                {viewMode === "optimized" && (
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: `${COLORS.green}18` }}
+                      >
+                        <ResumeOptimizeIcon size={19} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-800 text-sm">
+                          AI Optimized Preview
+                        </h3>
+                        <span className="text-xs font-bold text-green-600">
+                          FREE PREVIEW · See the difference instantly
+                        </span>
+                      </div>
+                    </div>
+
+                    <ul className="text-xs text-slate-600 space-y-1.5 mb-4">
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2
+                          size={12}
+                          className="text-green-500 flex-shrink-0"
+                        />
+                        Professionally rewritten profile summary
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2
+                          size={12}
+                          className="text-green-500 flex-shrink-0"
+                        />
+                        Role-aligned, recruiter-focused experience
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2
+                          size={12}
+                          className="text-green-500 flex-shrink-0"
+                        />
+                        Quantified achievements that stand out
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2
+                          size={12}
+                          className="text-green-500 flex-shrink-0"
+                        />
+                        ATS-friendly keywords for better shortlisting
+                      </li>
+                    </ul>
+                  </div>
+                )}
+
+                {viewMode !== "optimized" && (
+                  <div>
+                    {/* ─────────────────────────────────────
                   DOWNLOAD CARD
               ───────────────────────────────────── */}
-              <div className="bg-white rounded-2xl p-5 border-2 border-blue-200 shadow-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50">
-                    <SecureDownloadIcon size={19} />
-                  </div>
-                  <div>
-                    {/* <h3 className="font-bold text-slate-800 text-sm">
+
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50">
+                        <SecureDownloadIcon size={19} />
+                      </div>
+                      <div>
+                        {/* <h3 className="font-bold text-slate-800 text-sm">
                       Download Finished Resume
                     </h3> */}
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                         <span className="text-xs text-slate-500 font-bold whitespace-nowrap">
-                           {viewMode === "optimized" ? "AI-Optimized Resume — " : "Professional Clean Resume  — "} ₹{(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).final.toFixed(2)}
-                         </span>
-                         {(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).hasOffer && (
-                           <span className="text-[10px] text-slate-400 line-through">₹{(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).original.toFixed(2)}</span>
-                         )}
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-500 font-bold whitespace-nowrap">
+                              {viewMode === "optimized"
+                                ? "AI-Optimized Resume — "
+                                : "Professional Clean Resume  — "}{" "}
+                              ₹
+                              {(viewMode === "optimized"
+                                ? dynamicPricing.optimize
+                                : dynamicPricing.download
+                              ).final.toFixed(2)}
+                            </span>
+                            {(viewMode === "optimized"
+                              ? dynamicPricing.optimize
+                              : dynamicPricing.download
+                            ).hasOffer && (
+                              <span className="text-[10px] text-slate-400 line-through">
+                                ₹
+                                {(viewMode === "optimized"
+                                  ? dynamicPricing.optimize
+                                  : dynamicPricing.download
+                                ).original.toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+                          {(viewMode === "optimized"
+                            ? dynamicPricing.optimize
+                            : dynamicPricing.download
+                          ).hasOffer && (
+                            <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded uppercase tracking-wider w-fit mt-0.5">
+                              {
+                                (viewMode === "optimized"
+                                  ? dynamicPricing.optimize
+                                  : dynamicPricing.download
+                                ).discount
+                              }
+                              % Off
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      {(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).hasOffer && (
-                        <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded uppercase tracking-wider w-fit mt-0.5">
-                          {(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).discount}% Off
-                        </span>
-                      )}
                     </div>
-                  </div>
-                </div>
 
-                <p className="text-xs text-slate-500 mb-3 leading-relaxed">
-                  Choose your format below. Pay once to unlock the download for the currently selected version.
-                </p>
-
-                {/* ── Version notice ── */}
-                {hasOptimized && viewMode === "original" && (
-                  <div className="flex items-start gap-2 mb-3 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
-                    <AlertCircle size={14} className="text-amber-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-amber-700 leading-relaxed">
-                      You will download the <strong>original</strong> version.
-                      Toggle to <strong>AI Optimized</strong> above to download
-                      the enhanced version instead.
+                    <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+                      Choose your format below. Pay once to unlock the download
+                      for the currently selected version.
                     </p>
+
+                    {/* ── Version notice ── */}
+                    {hasOptimized && viewMode === "original" && (
+                      <div className="flex items-start gap-2 mb-3 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                        <AlertCircle
+                          size={14}
+                          className="text-amber-500 mt-0.5 flex-shrink-0"
+                        />
+                        <p className="text-xs text-amber-700 leading-relaxed">
+                          You will download the <strong>original</strong>{" "}
+                          version. Toggle to <strong>AI Optimized</strong> above
+                          to download the enhanced version instead.
+                        </p>
+                      </div>
+                    )}
+                    {hasOptimized && viewMode === "optimized" && (
+                      <div className="flex items-start gap-2 mb-3 p-2.5 bg-green-50 border border-green-200 rounded-lg">
+                        <CheckCircle2
+                          size={14}
+                          className="text-green-500 mt-0.5 flex-shrink-0"
+                        />
+                        <p className="text-xs text-green-700 leading-relaxed">
+                          You will download the <strong>AI optimized</strong>{" "}
+                          version.
+                        </p>
+                      </div>
+                    )}
+                    {!hasOptimized && (
+                      <div className="flex items-start gap-2 mb-3 p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+                        <Info
+                          size={14}
+                          className="text-blue-400 mt-0.5 flex-shrink-0"
+                        />
+                        <p className="text-xs text-blue-700 leading-relaxed">
+                          You are viewing the <strong>Original Clean</strong>{" "}
+                          resume. Click <strong>AI Optimized</strong> above to
+                          preview the upgrade for free!
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
-                {hasOptimized && viewMode === "optimized" && (
-                  <div className="flex items-start gap-2 mb-3 p-2.5 bg-green-50 border border-green-200 rounded-lg">
-                    <CheckCircle2 size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-green-700 leading-relaxed">
-                      You will download the <strong>AI optimized</strong> version.
-                    </p>
-                  </div>
-                )}
-                {!hasOptimized && (
-                  <div className="flex items-start gap-2 mb-3 p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
-                    <Info size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-blue-700 leading-relaxed">
-                      You are viewing the <strong>Original Clean</strong> resume. 
-                      Click <strong>AI Optimized</strong> above to preview the upgrade for free!
-                    </p>
-                  </div>
-                )}
 
+                {/* unlock btn  */}
                 <div className="space-y-3">
-                  {unlockedPurpose !== (viewMode === "optimized" ? "optimize" : "download") ? (
+                  {unlockedPurpose !==
+                  (viewMode === "optimized" ? "optimize" : "download") ? (
                     <button
                       className="w-full py-4 rounded-xl font-black text-base text-white transition-all hover:scale-[1.02] active:scale-95 shadow-lg flex flex-col items-center justify-center gap-1 group"
                       style={{ backgroundColor: "#16a34a" }}
                       onClick={() => unlockAndDownload()}
                     >
                       <div className="flex items-center gap-2">
-                        <Lock size={18} className="group-hover:animate-bounce" />
-                        <span>Pay ₹{(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).final.toFixed(2)} to Unlock Download</span>
+                        <Lock
+                          size={18}
+                          className="group-hover:animate-bounce"
+                        />
+                        <span>
+                          Pay ₹
+                          {(viewMode === "optimized"
+                            ? dynamicPricing.optimize
+                            : dynamicPricing.download
+                          ).final.toFixed(2)}{" "}
+                          to Unlock Download
+                        </span>
                       </div>
-                      {(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).hasOffer && (
+                      {(viewMode === "optimized"
+                        ? dynamicPricing.optimize
+                        : dynamicPricing.download
+                      ).hasOffer && (
                         <div className="flex items-center gap-2 text-[10px] opacity-90 font-bold uppercase tracking-wider">
-                          <span className="line-through">₹{(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).original.toFixed(2)}</span>
-                          <span className="bg-white/20 px-1 rounded">{(viewMode === "optimized" ? dynamicPricing.optimize : dynamicPricing.download).discount}% OFF</span>
+                          <span className="line-through">
+                            ₹
+                            {(viewMode === "optimized"
+                              ? dynamicPricing.optimize
+                              : dynamicPricing.download
+                            ).original.toFixed(2)}
+                          </span>
+                          <span className="bg-white/20 px-1 rounded">
+                            {
+                              (viewMode === "optimized"
+                                ? dynamicPricing.optimize
+                                : dynamicPricing.download
+                              ).discount
+                            }
+                            % OFF
+                          </span>
                         </div>
                       )}
                     </button>
                   ) : (
                     <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-500">
-                     
-                      
                       <button
                         className="w-full py-3 rounded-xl font-bold text-sm text-white transition-all  hover:opacity-90 flex items-center justify-center gap-2 border-b-4 border-green-700 active:border-b-0 active:translate-y-1"
                         style={{ backgroundColor: "#16a34a" }}
@@ -839,9 +930,15 @@ export default function ResumePreview() {
                         disabled={isDownloadingPdf}
                       >
                         {isDownloadingPdf ? (
-                          <><Loader2 size={15} className="animate-spin" />Generating PDF…</>
+                          <>
+                            <Loader2 size={15} className="animate-spin" />
+                            Generating PDF…
+                          </>
                         ) : (
-                           <><LockOpen size={16} />Download  PDF</>
+                          <>
+                            <LockOpen size={16} />
+                            Download PDF
+                          </>
                         )}
                       </button>
 
@@ -852,9 +949,15 @@ export default function ResumePreview() {
                         disabled={isDownloadingWord}
                       >
                         {isDownloadingWord ? (
-                          <><Loader2 size={15} className="animate-spin" />Generating Word…</>
+                          <>
+                            <Loader2 size={15} className="animate-spin" />
+                            Generating Word…
+                          </>
                         ) : (
-                           <><LockOpen size={16} />Download Word</>
+                          <>
+                            <LockOpen size={16} />
+                            Download Word
+                          </>
                         )}
                       </button>
                     </div>
@@ -863,17 +966,15 @@ export default function ResumePreview() {
                   {/* ── Invoice Button (whenever we have a paymentId) ── */}
                   {(downloadPaymentId || optimizePaymentId) && (
                     <button
-                    style={
-                       { borderColor: "#16a34a", color: "#16a34a" }
-                      }
+                      style={{ borderColor: "#16a34a", color: "#16a34a" }}
                       className="w-full py-2.5 rounded-xl font-bold text-sm border-2 transition-all hover:bg-green-50 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                       onClick={handleDownloadInvoice}
                       disabled={isDownloadingInvoice}
                     >
                       {isDownloadingInvoice ? (
                         <>
-                          <Loader2 size={12} className="animate-spin" /> Preparing
-                          Invoice...
+                          <Loader2 size={12} className="animate-spin" />{" "}
+                          Preparing Invoice...
                         </>
                       ) : (
                         <>
@@ -884,8 +985,6 @@ export default function ResumePreview() {
                   )}
                 </div>
               </div>
-
-             
 
               {/* ─────────────────────────────────────
                   OPTIMIZING — loading state
@@ -909,28 +1008,7 @@ export default function ResumePreview() {
                 </div>
               )}
 
-              {/* ─────────────────────────────────────
-                  OPTIMIZATION COMPLETE
-              ───────────────────────────────────── */}
-              {hasOptimized && !isOptimizing && (
-                <div
-                  className="bg-white rounded-2xl p-5 border-2 shadow-sm"
-                  style={{ borderColor: COLORS.green }}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle2 size={18} className="text-green-500 flex-shrink-0" />
-                    <h3 className="font-bold text-slate-800 text-sm">
-                      AI Optimization Complete
-                    </h3>
-                  </div>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Use the <strong>toggle above</strong> the resume to compare
-                    your original and AI-optimized versions. Download either
-                    version using the buttons above.
-                  </p>
-                </div>
-              )}
-
+            
             </div>
           </div>
         </div>

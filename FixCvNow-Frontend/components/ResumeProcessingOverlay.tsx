@@ -47,19 +47,19 @@ export const ResumeProcessingOverlay: React.FC<Props> = ({ isVisible }) => {
         }
       `}</style>
 
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/90 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white backdrop-blur-sm">
         
-        <div className="w-full max-w-md px-6 text-center">
+        <div className="w-full max-w-md px-6 text-center  rounded-2xl shadow-lg bg-white border-2 border-green-500/20 py-12">
 
           {/* Animated Icon */}
           <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-white text-xl">
+            <div className="relative"> 
+              <div className="w-16 h-16 rounded-full bg-green-600 flex items-center justify-center text-white text-xl">
                 ✨
               </div>
 
               <div className="absolute inset-0 rounded-full border-4 border-green-400 border-t-transparent animate-spin"></div>
-              <div className="absolute inset-[-8px] rounded-full border-4 border-slate-300 border-b-transparent spin-slow"></div>
+              <div className="absolute inset-[-8px] rounded-full border-4 border-slate-800 border-b-transparent spin-slow"></div>
             </div>
           </div>
 
@@ -110,10 +110,7 @@ export const ResumeProcessingOverlay: React.FC<Props> = ({ isVisible }) => {
             })}
           </div>
 
-          {/* Footer */}
-          <p className="mt-8 text-xs text-slate-400 uppercase tracking-widest font-bold">
-            FixCVNow AI Engine v2.0
-          </p>
+          
         </div>
       </div>
     </>
