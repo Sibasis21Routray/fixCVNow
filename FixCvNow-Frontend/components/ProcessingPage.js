@@ -6,6 +6,7 @@ import { AlertCircle, RefreshCw } from 'lucide-react'
 import { CloudUploadIcon } from '@/components/asset-icons'
 import { COLORS } from '@/lib/colors'
 import { resumeStorage, leadsStorage, sessionStorage_util } from '@/lib/storage'
+import { useToast } from '@/hooks/use-toast'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
@@ -44,6 +45,7 @@ const MIN_OPTIMIZATION_DURATION = 15000
 
 export default function ProcessingPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('id')
   const phase = searchParams.get('phase') || 'extraction'
@@ -275,6 +277,16 @@ const performExtraction = useCallback(async () => {
 
           if (event.type === 'error') {
             clearInterval(progressTimer)
+            if (event.code === 'TOKEN_LIMIT_EXCEEDED') {
+              toast({
+                title: "Resume Too Large",
+                description: event.error || "The resume content exceeds 10,000 tokens.",
+                variant: "destructive",
+              })
+              // Stop processing and redirect back to upload or show error in UI
+              setError(event.error)
+              return
+            }
             throw new Error(event.error || 'Extraction failed. Please try again.')
           }
         }

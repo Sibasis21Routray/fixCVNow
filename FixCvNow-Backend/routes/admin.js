@@ -6,6 +6,8 @@ import { Admin } from '../models/Admin.js'
 import { Lead } from '../models/Lead.js'
 import { TokenUsage } from '../models/TokenUsage.js'
 import { Pricing } from '../models/Pricing.js'
+import { Invoice } from '../models/Invoice.js'
+import ExcelJS from 'exceljs'
 
 const router = Router()
 
@@ -168,6 +170,53 @@ router.get('/token-usage', requireAuth, async (req, res) => {
 })
 
 // ============================================================
+// INVOICE MANAGEMENT ROUTES
+// ============================================================
+
+/**
+ * GET /admin/invoices
+ * Fetch paginated list of invoices with optional search
+ * Query params: page, limit, search
+ */
+router.get('/invoices', requireAuth, async (req, res) => {
+  try {
+    const page  = Math.max(1, parseInt(req.query.page)  || 1)
+    const limit = Math.min(100, parseInt(req.query.limit) || 20)
+    const skip  = (page - 1) * limit
+    
+    const search = req.query.search?.trim()
+    const filter = search
+      ? {
+          $or: [
+            { invoiceNumber: { $regex: search, $options: 'i' } },
+            { customerName:  { $regex: search, $options: 'i' } },
+            { email:         { $regex: search, $options: 'i' } },
+          ],
+        }
+      : {}
+
+    const [invoices, total] = await Promise.all([
+      Invoice.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Invoice.countDocuments(filter),
+    ])
+
+    res.json({
+      invoices,
+      total,
+      page,
+      pages: Math.ceil(total / limit)
+    })
+  } catch (err) {
+    console.error('[Admin] Invoices error:', err.message)
+    res.status(500).json({ error: 'Failed to fetch invoices' })
+  }
+})
+
+// ============================================================
 // STATISTICS ROUTES
 // ============================================================
 
@@ -291,6 +340,113 @@ router.put('/pricing', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('[Admin] Update pricing error:', err.message)
     res.status(500).json({ error: 'Failed to update pricing' })
+  }
+})
+
+
+/**
+ * GET /admin/export-data
+ * Export monthly data (leads, invoices, token usage) to Excel
+ * Query params: month, year
+ */
+router.get('/export-data', requireAuth, async (req, res) => {
+  try {
+    const monthQuery = req.query.month;
+    const year = parseInt(req.query.year) || new Date().getFullYear()
+    const type = req.query.type || 'all'; // leads, invoices, tokens, all
+    
+    let startDate, endDate;
+    let filename = `Export-${type}-${year}`;
+
+    if (monthQuery && monthQuery !== 'all') {
+      const month = parseInt(monthQuery);
+      startDate = new Date(year, month - 1, 1)
+      endDate = new Date(year, month, 0, 23, 59, 59, 999)
+      filename += `-${month}`;
+    } else {
+      startDate = new Date(year, 0, 1)
+      endDate = new Date(year, 11, 31, 23, 59, 59, 999)
+    }
+
+    const workbook = new ExcelJS.Workbook()
+    
+    // FETCH AND ADD LEADS
+    if (type === 'all' || type === 'leads') {
+      const leads = await Lead.find({ extractedAt: { $gte: startDate, $lte: endDate } }).lean()
+      const leadSheet = workbook.addWorksheet('Leads')
+      leadSheet.columns = [
+        { header: 'Name', key: 'name', width: 20 },
+        { header: 'Email', key: 'email', width: 30 },
+        { header: 'Phone', key: 'phone', width: 15 },
+        { header: 'Extracted At', key: 'extractedAt', width: 25 },
+        { header: 'Session ID', key: 'sessionId', width: 30 },
+      ]
+      leads.forEach(l => leadSheet.addRow({
+        name: l.name,
+        email: l.email,
+        phone: l.phone,
+        extractedAt: l.extractedAt ? new Date(l.extractedAt).toISOString() : '',
+        sessionId: l.sessionId
+      }))
+    }
+
+    // FETCH AND ADD INVOICES
+    if (type === 'all' || type === 'invoices') {
+      const invoices = await Invoice.find({ createdAt: { $gte: startDate, $lte: endDate } }).lean()
+      const invoiceSheet = workbook.addWorksheet('Invoices')
+      invoiceSheet.columns = [
+        { header: 'Invoice #', key: 'invoiceNumber', width: 15 },
+        { header: 'Customer', key: 'customerName', width: 20 },
+        { header: 'Email', key: 'email', width: 30 },
+        { header: 'Amount', key: 'amount', width: 10 },
+        { header: 'Currency', key: 'currency', width: 10 },
+        { header: 'Purpose', key: 'purpose', width: 20 },
+        { header: 'Session ID', key: 'sessionId', width: 30 },
+        { header: 'Date', key: 'createdAt', width: 25 },
+      ]
+      invoices.forEach(i => invoiceSheet.addRow({
+        invoiceNumber: i.invoiceNumber,
+        customerName: i.customerName,
+        email: i.email,
+        amount: `₹${(i.amount / 100).toLocaleString()}`,
+        currency: i.currency,
+        purpose: i.purpose,
+        sessionId: i.sessionId,
+        createdAt: i.createdAt ? new Date(i.createdAt).toISOString() : ''
+      }))
+    }
+
+    // FETCH AND ADD TOKENS
+    if (type === 'all' || type === 'tokens') {
+      const tokens = await TokenUsage.find({ timestamp: { $gte: startDate, $lte: endDate } }).lean()
+      const tokenSheet = workbook.addWorksheet('Token Usage')
+      tokenSheet.columns = [
+        { header: 'Operation', key: 'operation', width: 15 },
+        { header: 'Model', key: 'model', width: 15 },
+        { header: 'Input Tokens', key: 'inputTokens', width: 15 },
+        { header: 'Output Tokens', key: 'outputTokens', width: 15 },
+        { header: 'Total Tokens', key: 'totalTokens', width: 15 },
+        { header: 'Timestamp', key: 'timestamp', width: 25 },
+      ]
+      tokens.forEach(t => tokenSheet.addRow({
+        operation: t.operation,
+        model: t.model,
+        inputTokens: t.inputTokens,
+        outputTokens: t.outputTokens,
+        totalTokens: t.totalTokens,
+        timestamp: t.timestamp ? new Date(t.timestamp).toISOString() : ''
+      }))
+    }
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`)
+
+    await workbook.xlsx.write(res)
+    res.end()
+
+  } catch (err) {
+    console.error('[Admin] Export error:', err.message)
+    res.status(500).json({ error: 'Failed to export data' })
   }
 })
 

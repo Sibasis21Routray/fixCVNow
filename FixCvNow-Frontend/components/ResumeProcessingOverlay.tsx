@@ -68,7 +68,7 @@ export const ResumeProcessingOverlay: React.FC<Props> = ({ isVisible }) => {
             Transforming Your Resume
           </h2>
 
-          <p className="text-slate-500 mb-6 text-sm font-semibold text-green-600">
+          <p className="text-slate-500 mb-6 text-sm font-semibold ">
             AI-Powered Optimization in Progress...
           </p>
 

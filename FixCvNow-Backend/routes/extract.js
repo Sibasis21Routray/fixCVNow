@@ -4,6 +4,7 @@ import { Router } from 'express'
 import multer from 'multer'
 import mammoth from 'mammoth'
 import OpenAI from 'openai'
+import { PDFParse } from 'pdf-parse'
 import { z } from 'zod'
 import { zodTextFormat } from 'openai/helpers/zod'
 import { isDbConnected } from '../db/connect.js'
@@ -62,6 +63,15 @@ function parseResumeDate(str) {
     if (s.includes(mon)) return new Date(year, idx).getTime()
   }
   return new Date(year, 0).getTime()
+}
+
+/** 
+ * Estimate token count based on character length.
+ * Standard rule of thumb: 1 token ~ 4 characters of English text.
+ */
+function estimateTokens(text) {
+  if (!text) return 0
+  return Math.ceil(text.length / 4)
 }
 
 function sortDescByStart(arr) {
@@ -315,9 +325,45 @@ router.post('/', upload.single('file'), async (req, res) => {
         return res.end()
       }
       fileRef = { resumeText: result.value }
-      console.log(`[Extract] DOCX text extracted: ${result.value.length} characters`)
+      const docxTokens = estimateTokens(result.value)
+      // Total input tokens = (resume tokens + avg prompt tokens) * 5 concurrent sections
+      const totalEstimatedDocxTokens = (docxTokens + 500) * 5
+      console.log(`[Extract] DOCX text extracted: ${result.value.length} chars (~${docxTokens} resume tokens, ~${totalEstimatedDocxTokens} total request tokens)`)
+
+      if (totalEstimatedDocxTokens > 10000) {
+        console.warn(`[Extract] DOCX too large: ~${totalEstimatedDocxTokens} total tokens`)
+        sendSSE(res, { 
+          type: 'error', 
+          error: 'The combined token count for this resume exceeds the 10,000 limit. Please upload a shorter resume.',
+          code: 'TOKEN_LIMIT_EXCEEDED' 
+        })
+        clearInterval(heartbeat)
+        return res.end()
+      }
     } else {
       console.log('[Extract] PDF detected — uploading to OpenAI')
+      
+      // Also extract text locally just for token counting
+      const parser = new PDFParse({ data: req.file.buffer })
+      const result = await parser.getText()
+      const pdfText = result.text || ''
+      await parser.destroy()
+      const pdfTokens = estimateTokens(pdfText)
+      // Total input tokens = (resume tokens + avg prompt tokens) * 5 concurrent sections
+      const totalEstimatedPdfTokens = (pdfTokens + 500) * 5
+      console.log(`[Extract] PDF text extracted: ${pdfText.length} chars (~${pdfTokens} resume tokens, ~${totalEstimatedPdfTokens} total request tokens)`)
+      
+      if (totalEstimatedPdfTokens > 10000) {
+        console.warn(`[Extract] PDF too large: ~${totalEstimatedPdfTokens} total tokens`)
+        sendSSE(res, { 
+          type: 'error', 
+          error: 'The combined token count for this resume exceeds the 10,000 limit. Please upload a shorter resume.',
+          code: 'TOKEN_LIMIT_EXCEEDED' 
+        })
+        clearInterval(heartbeat)
+        return res.end()
+      }
+
       const uploadedFile = await uploadAssistantFileFromBuffer(
         openai,
         req.file.buffer,
